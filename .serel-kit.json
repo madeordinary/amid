@@ -1,0 +1,27 @@
+{
+  "installed": {
+    "writing": {
+      "version": "0.2.0",
+      "files": {
+        ".agents/skills/polish/RULES.md": "120a0b0a3d93f64f8dd1f3bf96ca7b6c6da0ab2186fcf89b089c6d415571644b",
+        ".agents/skills/polish/SKILL.md": "2d170083c42deebaad846caf40201cd65160903c873d41ce8a3dc9f86e137c99",
+        ".agents/skills/polish/agents/openai.yaml": "39ca96bfec86bcb3c1328dc1b437e9886a8ac05c74f45c5c47a1df58449a30a7",
+        ".claude/commands/polish.md": "f43abfad40131a082ac5c21bd50f510b98f1294b452f06c99cac4eda883c8ec8"
+      }
+    },
+    "verify": {
+      "version": "0.2.0",
+      "files": {
+        ".agents/skills/verify-map/SKILL.md": "dedf290c9a4c7cb81196ff17989ef2a1f291c98a91be80c2e137061d3933cce6",
+        ".agents/skills/verify-map/TEMPLATE.md": "82e240b449874bf3d9c7335946ec812fcbff8f3056f4098ec08ad592e94d4b97",
+        ".agents/skills/verify-map/agents/openai.yaml": "9b1af70dd68fe791199bd19a17939bf7c2f281106dff63e6450672935fba20b4",
+        ".claude/commands/verify-map.md": "c62253a821cb890fb58a6357a8f6a8128d1398cffad08aee82a81c58bcf21db0"
+      }
+    }
+  },
+  "kit": "0.2.0",
+  "packs": [
+    "verify",
+    "writing"
+  ]
+}

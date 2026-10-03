@@ -1,0 +1,17 @@
+{
+  "applications" : 354,
+  "availability" : "available",
+  "duration" : 0.030873333336785436,
+  "inaccessible" : 208,
+  "listeningEndpoints" : 23,
+  "notes" : [
+    "CPU is percent of one logical core; first samples and reset counters are unknown.",
+    "Project attribution uses explicit containing roots or marker existence within twelve ancestors.",
+    "Application grouping uses outer bundle path or exact executable path; ancestry is not inferred."
+  ],
+  "observed" : 729,
+  "pressure" : "unknown",
+  "projects" : 10,
+  "selfObserved" : true,
+  "systemCPU" : 14.528240287300031
+}

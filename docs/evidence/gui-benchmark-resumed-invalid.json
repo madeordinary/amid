@@ -1,0 +1,45 @@
+{
+  "measurement" : {
+    "cpuSeconds" : 19.881403,
+    "elapsedSeconds" : 1801.927537541,
+    "interruptWakeups" : 4321,
+    "interruptWakeupsPerSecond" : 2.3979876604231554,
+    "involuntaryContextSwitches" : 39128,
+    "meanCPUPercentOneCore" : 1.10334087169405,
+    "notes" : [
+      "Full GUI with accessible process metadata; 30-second warmup. Temporary encrypted storage obeys monitoring.retention.",
+      "Elapsed time uses ContinuousClock. CPU and context switches are interval getrusage(RUSAGE_SELF) deltas. Peak RSS is a process-lifetime maximum, including startup and warmup. Wakeups are separate own-process libproc interrupt and package-idle counter deltas; neither is a total of all wakeups. Unavailable or regressed counters are unknown."
+    ],
+    "packageIdleWakeups" : 133,
+    "packageIdleWakeupsPerSecond" : 0.073809849302541,
+    "peakResidentBytes" : 160710656,
+    "voluntaryContextSwitches" : 833
+  },
+  "monitoring" : {
+    "acceptedSamples" : 275,
+    "createdAt" : "2026-10-02T17:06:32Z",
+    "elapsedSeconds" : 1801.927687209,
+    "invalidReasons" : [
+      "Monitoring suspended: screen"
+    ],
+    "lastRequestedCadence" : 5,
+    "lastSampleElapsed" : 1435.687579917,
+    "maximumGapSeconds" : 5.399047000000053,
+    "maximumRequestedCadence" : 5,
+    "measurementStartedAt" : "2026-10-02T17:07:03Z",
+    "minimumRequestedCadence" : 5,
+    "observedProcessesAtCompletion" : 650,
+    "phase" : "invalid",
+    "requestedSeconds" : 1800,
+    "retention" : "week",
+    "runID" : "9EFD2843-5E17-4B59-9421-312C8921D245",
+    "statusUpdatedAt" : "2026-10-02T17:37:05Z",
+    "unavailableSamples" : 0,
+    "warmupSamples" : 6
+  },
+  "notes" : [
+    "Only monitoring.phase=completed describes a continuous sampling run; this is not a reference-hardware or baseline pass.",
+    "Peak RSS includes startup and warmup. Wakeup counters are separate public own-process counters.",
+    "Status heartbeat writes occur at most once per minute and are included in measured cost."
+  ]
+}

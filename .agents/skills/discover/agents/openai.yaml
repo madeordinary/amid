@@ -1,0 +1,4 @@
+interface:
+  display_name: "Discover"
+  short_description: "Define a rough project idea"
+  default_prompt: "Use $discover to turn my rough project idea into initial memory-bank files."

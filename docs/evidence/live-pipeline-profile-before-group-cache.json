@@ -1,0 +1,147 @@
+{
+  "actualRunnerExitCode": 0,
+  "buildConfiguration": "release",
+  "debugDiagnostic": {
+    "actualRunnerExitCode": 0,
+    "buildConfiguration": "debug",
+    "groupedViewsAtCompletion": 343,
+    "invalidReasons": [],
+    "invocation": "AMID_LIVE_PIPELINE_PROFILE=1 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun xctest -XCTest AmidCoreTests.LivePipelineProfileTests/testOptInRealPipelineSixtySeconds /private/tmp/amid-groups-build/arm64-apple-macosx/debug/AmidPackageTests.xctest",
+    "maximumEnumerated": 877,
+    "maximumGapSeconds": 5.134088042000002,
+    "maximumInaccessible": 206,
+    "maximumObserved": 670,
+    "minimumEnumerated": 874,
+    "minimumInaccessible": 206,
+    "minimumObserved": 667,
+    "notes": [
+      "Two collector warmup samples five seconds apart; no thirty-second GUI warmup. Twelve expected samples over approximately sixty seconds, sleeping five seconds after each pipeline.",
+      "Phase CPU is whole-process getrusage delta over each async span; unrelated XCTest work can contribute. Phase spans do not overlap. Phase timing/report overhead and sleep are outside named spans.",
+      "Default sorted application/project grouping mimics hidden AppModel refresh. Prior whole HistoryState is not retained. This approximates the core pipeline; no SwiftUI rendering, menu updates, notifications, or allocations measurement.",
+      "Coverage counts report permission-limited process enumeration; inaccessible processes are not inferred. No identities, executable paths, project paths, listener metadata, arguments, environment, source contents or payloads are written to this evidence.",
+      "A short phase profile is not a sustained observer-budget, matched baseline, reference-M1 or full-GUI pass. Actual runner exit was checked separately.",
+      "Debug diagnostic; not comparable to optimized release app budget. Follow-up release run required."
+    ],
+    "phases": {
+      "alertEvaluate": {
+        "calls": 12,
+        "cpuSeconds": 0.08881400000000006,
+        "wallSeconds": 0.088922041
+      },
+      "grouping": {
+        "calls": 12,
+        "cpuSeconds": 0.02038100000000001,
+        "wallSeconds": 0.020413792
+      },
+      "historyIngest": {
+        "calls": 12,
+        "cpuSeconds": 0.04301299999999994,
+        "wallSeconds": 0.04349758499999999
+      },
+      "historyState": {
+        "calls": 12,
+        "cpuSeconds": 1.7999999999990246e-05,
+        "wallSeconds": 2.5542000000000004e-05
+      },
+      "recordAlerts": {
+        "calls": 12,
+        "cpuSeconds": 2.0999999999882224e-05,
+        "wallSeconds": 2.9750999999999997e-05
+      },
+      "sampler": {
+        "calls": 12,
+        "cpuSeconds": 0.234699,
+        "wallSeconds": 0.235623042
+      }
+    },
+    "process": {
+      "cpuSeconds": 0.415696,
+      "elapsedSeconds": 61.198745,
+      "interruptWakeups": 575,
+      "interruptWakeupsPerSecond": 9.395617508169488,
+      "involuntaryContextSwitches": 2970,
+      "meanCPUPercentOneCore": 0.6792557592480042,
+      "notes": [
+        "Whole XCTest process, not the shipped GUI. Temporary encrypted week history.",
+        "Elapsed time uses ContinuousClock. CPU and context switches are interval getrusage(RUSAGE_SELF) deltas. Peak RSS is a process-lifetime maximum, including startup and warmup. Wakeups are separate own-process libproc interrupt and package-idle counter deltas; neither is a total of all wakeups. Unavailable or regressed counters are unknown."
+      ],
+      "packageIdleWakeups": 0,
+      "packageIdleWakeupsPerSecond": 0,
+      "peakResidentBytes": 41697280,
+      "voluntaryContextSwitches": 6
+    },
+    "samples": 12,
+    "valid": true,
+    "warmupSamples": 2
+  },
+  "groupedViewsAtCompletion": 344,
+  "invalidReasons": [],
+  "invocation": "AMID_LIVE_PIPELINE_PROFILE=1 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun xctest -XCTest AmidCoreTests.LivePipelineProfileTests/testOptInRealPipelineSixtySeconds /tmp/amid-groups-build/arm64-apple-macosx/release/AmidPackageTests.xctest",
+  "maximumEnumerated": 875,
+  "maximumGapSeconds": 5.115698583000004,
+  "maximumInaccessible": 206,
+  "maximumObserved": 668,
+  "minimumEnumerated": 872,
+  "minimumInaccessible": 206,
+  "minimumObserved": 665,
+  "notes": [
+    "Two collector warmup samples five seconds apart; no thirty-second GUI warmup. Twelve expected samples over approximately sixty seconds, sleeping five seconds after each pipeline.",
+    "Phase CPU is whole-process getrusage delta over each async span; unrelated XCTest work can contribute. Phase spans do not overlap. Phase timing/report overhead and sleep are outside named spans.",
+    "Default sorted application/project grouping mimics hidden AppModel refresh. Prior whole HistoryState is not retained. This approximates the core pipeline; no SwiftUI rendering, menu updates, notifications, or allocations measurement.",
+    "Coverage counts report permission-limited process enumeration; inaccessible processes are not inferred. No identities, executable paths, project paths, listener metadata, arguments, environment, source contents or payloads are written to this evidence.",
+    "A short phase profile is not a sustained observer-budget, matched baseline, reference-M1 or full-GUI pass. Runner exit must be checked and recorded separately.",
+    "Instrumentation invokes own-process counters before and after every phase; its cost and sample/result destruction outside named spans are included in overall CPU. Debug and release observations occurred at different times under changing host conditions; they are not a controlled optimization comparison."
+  ],
+  "phases": {
+    "alertEvaluate": {
+      "calls": 12,
+      "cpuSeconds": 0.07891400000000007,
+      "wallSeconds": 0.079329751
+    },
+    "grouping": {
+      "calls": 12,
+      "cpuSeconds": 0.012263000000000163,
+      "wallSeconds": 0.012304459
+    },
+    "historyIngest": {
+      "calls": 12,
+      "cpuSeconds": 0.03490099999999993,
+      "wallSeconds": 0.037550999999999994
+    },
+    "historyState": {
+      "calls": 12,
+      "cpuSeconds": 2.900000000011227e-05,
+      "wallSeconds": 3.7168999999999996e-05
+    },
+    "recordAlerts": {
+      "calls": 12,
+      "cpuSeconds": 1.9000000000074513e-05,
+      "wallSeconds": 2.9833000000000004e-05
+    },
+    "sampler": {
+      "calls": 12,
+      "cpuSeconds": 0.3117819999999999,
+      "wallSeconds": 0.31254541799999996
+    }
+  },
+  "process": {
+    "cpuSeconds": 0.517094,
+    "elapsedSeconds": 61.124489,
+    "interruptWakeups": 576,
+    "interruptWakeupsPerSecond": 9.42339166221905,
+    "involuntaryContextSwitches": 3115,
+    "meanCPUPercentOneCore": 0.8459686264207462,
+    "notes": [
+      "Whole XCTest process, not the shipped GUI. Temporary encrypted week history.",
+      "Elapsed time uses ContinuousClock. CPU and context switches are interval getrusage(RUSAGE_SELF) deltas. Peak RSS is a process-lifetime maximum, including startup and warmup. Wakeups are separate own-process libproc interrupt and package-idle counter deltas; neither is a total of all wakeups. Unavailable or regressed counters are unknown."
+    ],
+    "packageIdleWakeups": 5,
+    "packageIdleWakeupsPerSecond": 0.08180027484565147,
+    "peakResidentBytes": 43073536,
+    "voluntaryContextSwitches": 6
+  },
+  "runnerExitRecordedAtUTC": "2026-10-02T17:44:45.580466+00:00",
+  "samples": 12,
+  "valid": true,
+  "warmupSamples": 2
+}

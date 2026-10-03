@@ -1,0 +1,15 @@
+{
+  "cached" : {
+    "calls" : 21600,
+    "outputUTF8Bytes" : 148170,
+    "ownCPUSeconds" : 0.031161999999999995,
+    "wallSeconds" : 0.031393666
+  },
+  "convenience" : {
+    "calls" : 21600,
+    "outputUTF8Bytes" : 148170,
+    "ownCPUSeconds" : 0.03224200000000001,
+    "wallSeconds" : 0.033349583
+  },
+  "scope" : "Synthetic MainActor byte formatting only; 10 batches × 36 ticks × 60 calls per variant. Own process CPU includes concurrent test-harness work. Fixed convenience-then-cached order; no whole-app or locale-change claim."
+}

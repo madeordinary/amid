@@ -1,0 +1,55 @@
+# Amid by Made Ordinary — local handoff
+
+Public source update (2026-10-02): [madeordinary/amid](https://github.com/madeordinary/amid) is public. This publishes a development source preview; application binaries, signing/notarization and the remaining acceptance gates are unchanged. See [repository hygiene](repository-hygiene.md) for the private-history boundary.
+
+Current checkpoint (2026-10-02 22:26 CDT): `build/AmidCandidate.app` includes the reviewed performance/storage fixes and packaged with strict ad-hoc verification exit 0. [Source manifest](evidence/current-candidate-source.json). The integrated run executed 140 tests: 12 skipped and three owned endpoint failures caused by sandbox bind denial (exit 1). A same-artifact follow-up outside that sandbox passed all 11 native collector/endpoint tests with no skips. Integrated log (local record: `current-integration-matching-sdk-tests.log`), native follow-up (local record: `current-owned-collector-tests.log`). Current candidate native launch is still pending; earlier GUI observations retain their exact bundle scope.
+
+Updated 2026-10-02 after the presentation candidate, short normal GUI profile and scoped retained-store experiment. Scope and authority: [PRD](../PRD.md), [GOAL](../GOAL.md).
+
+## Current state
+
+Amid is a native offline Mac monitor for applications, development projects and listening TCP ports. The preceding natively observed bundle is `build/AmidPresentation.app`, packaged and strictly ad-hoc verified. The frozen [AmidPresentation manifest](evidence/presentation-source.json) records package and strict ad-hoc verification exit 0, source fingerprint `8ce8028e8a092c05fd030d3ebea2d37402b720360fd1a8861d14710782937914` and executable SHA256 `f91f539608d360e30b7980ab72e7aaeda96ddbf2f55274f6333c9a6aba4b8274`. Later decode-scope changes and the explicit menu accessibility name/value are outside that executable; the latter compiled in focused builds but is not natively verified. The historical [checkpoint candidate](evidence/checkpoint-candidate.md) was launched at 18:42 CDT; History cadence/gap columns, horizontal scrolling and a real pause gap were observed. The earlier [AmidAcceptance bundle](evidence/acceptance-candidate.md) identifies the preceding stop/data-control observations. The local goal remains incomplete because remaining native checks and full-app performance have not passed.
+
+## Completed and observed
+
+Afternoon native checks proved Clear History cancellation and confirmed removal preserving aliases/preferences, temporary-store write failure and Retry recovery without plaintext fallback, and the pinned real-server declaration/cancel/reset/expiry/confirmed-stop flow. Expiry sent zero signals and correctly called remaining state unavailable; a fresh declared preview sent one SIGTERM and the exact owned child exited 0. A minimized/restored detail displayed 5.6/2.1-second intervals. [Native observations](evidence/acceptance-ui-observations.md).
+
+The new source fixes canonical path comparison in the explicit verification filter and queued notification delivery after rule/application-exclusion changes. Failing regressions preceded both fixes. History now displays actual cadence ranges and recorded gaps; its columns and horizontal scrolling were observed in the evening. Complete keyboard/tooltip/VoiceOver checks remain open. Final release app suite: 18 tests, one explicit opt-in profile skip, zero failures. The separate filled-ring profile passed; insignificant hidden-background savings did not justify changing the expiry lifecycle. Three additional owned IPv6/wildcard socket tests passed outside the tool sandbox after documented bind denials inside it. No connection or payload was used. Older 78-test integrated/six-skip and 21-test release/no-skip evidence retains its original scope.
+
+The first two GUI performance attempts invalidated on screen lock; the second stopped qualifying after 35 samples and about three minutes. The fresh checkpoint-source run completed continuously at19:50:35CDT: CPU1.559615% and peak RSS160.265625MiB both failed budgets. Its [raw report](evidence/gui-benchmark-checkpoint-completed.json) is preserved; the app was quit and its report hash remained unchanged. The earlier invalid report included suspended time and exceeded CPU/RSS targets. Collector-only 30-minute CPU was 0.419938% of one core; this is not full-app evidence. [Performance limits](evidence/performance.md).
+
+The frozen presentation source passed 27 focused release tests with no skips/failures; native Hide/Raise preserved Overview scroll, restored fresh values and did not resurrect paused-Clear data. The 21:50–21:54 keyboard subset reached destinations with Command-1…7, searched/selected the own application, paused/resumed/refreshed and dismissed diagnostics with Escape. Menu opening, complete focus paths and actual VoiceOver remain unverified. [Presentation/UI](evidence/gui-pipeline-profile.md), [keyboard subset](evidence/presentation-keyboard-observations.md).
+
+The normal-presentation short GUI run completed 189.477190s with 18 accepted samples at 10 s cadence: CPU 0.672946% and lifetime RSS 116.734375MiB. CPU still fails 0.5%; this is not a 30-minute pass or an isolated before/after saving. The scoped 21-entity/week loader peaked 178.484375MiB, still failing 150 MiB; record-count drift prevents a controlled causal comparison. The clean-v3 candidate passed 34 affected release tests with 2 opt-in skips and 0 failures, plus a fresh loader pass. The fixed-clock pair retained 31,311 records and 18,410,966 ciphertext bytes in both variants: baseline lifetime peak 178.25MiB versus candidate lifetime process peak 138.375MiB; the candidate checkpoint through flush was 138.359375MiB. Post-load RSS rose 129.640625→138.3125MiB and physical footprint 43.469666→114.719620MiB. This is one small core fixture, not a filled-ring/full-GUI or 30-minute pass. Exact pair and validation (local record: `retained-history-memory-clean-v3-validation.log`), [baseline](evidence/retained-history-memory-clean-v3-baseline.json), [candidate](evidence/retained-history-memory-clean-v3-candidate.json). [GUI phases](evidence/gui-pipeline-profile.md), [retained-memory evidence](evidence/retained-history-memory.md). The nine-case mocked system-reply fixture failed before the size guards and passed afterward. The owned port-list stack-buffer candidate was rejected without a production change. [Port-list evidence](evidence/owned-port-list-profile.md).
+
+## Run locally
+
+Observed toolchain: Xcode 27.0, Swift 6.4, SDK 27.0 on arm64 macOS 27.0.1. Scripts select the toolchain per command and use project caches.
+
+```sh
+bash scripts/build.sh
+bash scripts/test.sh
+AMID_PACKAGE_OUTPUT="$PWD/build/AmidNext.app" bash scripts/package.sh
+open -n build/AmidNext.app --args --verification
+bash scripts/test-fixtures.sh
+```
+
+Package only when that bundle is not running. Verification mode uses disposable temporary history and an ephemeral key; normal launch uses app-owned Keychain/Application Support. Native listener tests need permission to bind their own sockets. No global toolchain changes are needed. [README](../README.md), [dependencies](dependencies.md).
+
+Verification-only sampler breakdown passed 36 focused tests with 1 opt-in skip, then one calibration test with no skips/failures. It emits numeric own-thread CPU/coarse and fine wall stages; those are separate views, with no overhead subtraction or GUI causal attribution claim. Evidence (local record: `sampler-breakdown-verification.log`). The completed matching-SDK integration and separate native follow-up are recorded at the top; the original full-suite exit remains 1. The menu accessibility label compiled in focused builds but its spoken name/value is not natively verified.
+
+## Exact next actions
+
+1. Review this handoff, the [requirements matrix](requirements.md) and Git state. Maintainers with a private local memory bank should also read its current checkpoint; public contributors do not need it. Check current owned-run status rather than assuming the historical cleanup still applies. Clean-v3 has the affected-test and exact-pair evidence above; the latest integrated run and current package are recorded above; launch the current candidate for the remaining native checks. Preserve exact-count, concurrent-work, fixture and host limits.
+2. Implement only evidenced, bounded optimizations; preserve raw retention and requested cadence. Rebuild a separately identified bundle, then repeat the uninterrupted30-minute full-GUI protocol after warmup. The completed failed report remains immutable; no collector-only result replaces it.
+3. Finish tooltip/full keyboard/menu, lifecycle and accessibility paths. Optional user permission for Mac keyboard-navigation, VoiceOver and caption preferences remains pending; no preferences were changed. Test actual speech and a defined menu-open p95 protocol rather than tool latency. History columns/horizontal scrolling and a real pause gap are already observed. Measure menu p95 and visible History separately. Reference hardware, matched baseline, beta and binary distribution remain open.
+
+## Architecture and boundaries
+
+Public process/system/socket metadata feeds separate collector, identity, attribution, encrypted-history, alert and action components. CryptoKit AES-GCM generations and an authenticated manifest use a per-install app-owned key. Off history expires by wall clock, including while paused; clear/lock invalidate raw/action/inspector caches. Only exact known server builds and identities can receive a confirmed audit-token-bound SIGTERM; generic runtimes stay read-only.
+
+No monitored arguments, environments, prompts, file contents, clipboard, credentials or payloads are collected. There is no root helper, private framework, Docker socket, account, analytics or runtime network dependency. No existing user workload or normal store was changed during tests. [Storage](storage-design.md), [action safety](action-safety.md).
+
+Minimum macOS15, reference/newer hardware/external display, complete VoiceOver/system preference cases, real fourteen-day beta/usability, naming checks and public signing/notarization remain open. No upload, publication, push or PR is authorized. The local package is ad-hoc only. [Release gates](release-gates.md), [beta plan](beta-plan.md).
+
+Serel Memory v0.6.0 and Kit v0.2.0 remain installed for Claude and Codex with hooks off and runtime exclusion. GPT-6.1 sol builders/reviewers handled bounded lanes. Independent cross-tool review was unavailable, so only same-model review is claimed. Evidence collection remains limited to permitted metadata and numeric own-process counters; no machine privacy/security setting changes are authorized.

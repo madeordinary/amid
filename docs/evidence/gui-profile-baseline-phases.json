@@ -1,0 +1,78 @@
+{
+  "benchmarkPhase" : "completed",
+  "elapsedSeconds" : 184.078038416,
+  "measuredPhaseCPUSeconds" : 2.0938659999999976,
+  "notes" : [
+    "Verification-only own getrusage(RUSAGE_SELF) CPU seconds and ContinuousClock wall intervals. No process metadata or payloads.",
+    "Phases never overlap. Each phase's own-process CPU includes concurrent work during awaited operations; these are coarse intervals, not causal stack attribution.",
+    "Residual is whole interval CPU minus completed phase intervals; it includes SwiftUI, timers, other tasks, uninstrumented work and instrumentation overhead. It is not exclusively rendering.",
+    "Unavailable, nonfinite or regressed counters remain unknown. An unfinished phase makes summed and residual CPU unknown. Benchmark phase is recorded separately; this profile is not a release budget pass."
+  ],
+  "ownCPUSeconds" : 2.39231,
+  "phases" : {
+    "alertRecord" : {
+      "calls" : 35,
+      "cpuSeconds" : 0.0014910000000001311,
+      "unknownCPUIntervals" : 0,
+      "unknownWallIntervals" : 0,
+      "wallSeconds" : 0.0012860009999862143
+    },
+    "alerts" : {
+      "calls" : 35,
+      "cpuSeconds" : 0.10327100000000078,
+      "unknownCPUIntervals" : 0,
+      "unknownWallIntervals" : 0,
+      "wallSeconds" : 0.0720534189999853
+    },
+    "collection" : {
+      "calls" : 35,
+      "cpuSeconds" : 1.2174819999999984,
+      "unknownCPUIntervals" : 0,
+      "unknownWallIntervals" : 0,
+      "wallSeconds" : 1.2392767509999345
+    },
+    "expiry" : {
+      "calls" : 35,
+      "cpuSeconds" : 0.00389400000000073,
+      "unknownCPUIntervals" : 0,
+      "unknownWallIntervals" : 0,
+      "wallSeconds" : 0.003259251000002905
+    },
+    "grouping" : {
+      "calls" : 35,
+      "cpuSeconds" : 0.030837999999998367,
+      "unknownCPUIntervals" : 0,
+      "unknownWallIntervals" : 0,
+      "wallSeconds" : 0.029859788999928583
+    },
+    "historyIngest" : {
+      "calls" : 35,
+      "cpuSeconds" : 0.731333999999999,
+      "unknownCPUIntervals" : 0,
+      "unknownWallIntervals" : 0,
+      "wallSeconds" : 0.6433500409999091
+    },
+    "notifications" : {
+      "calls" : 35,
+      "cpuSeconds" : 6.200000000222694e-05,
+      "unknownCPUIntervals" : 0,
+      "unknownWallIntervals" : 0,
+      "wallSeconds" : 5.549600000520627e-05
+    },
+    "publication" : {
+      "calls" : 35,
+      "cpuSeconds" : 0.004231999999998681,
+      "unknownCPUIntervals" : 0,
+      "unknownWallIntervals" : 0,
+      "wallSeconds" : 0.004229997999996016
+    },
+    "storeSync" : {
+      "calls" : 35,
+      "cpuSeconds" : 0.0012619999999989862,
+      "unknownCPUIntervals" : 0,
+      "unknownWallIntervals" : 0,
+      "wallSeconds" : 0.0010625379999602558
+    }
+  },
+  "residualCPUSeconds" : 0.2984440000000026
+}

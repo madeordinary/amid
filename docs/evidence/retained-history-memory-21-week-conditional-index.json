@@ -1,0 +1,243 @@
+{
+  "actualCiphertextBytes": 19002665,
+  "actualHourRecords": 3045,
+  "actualMinuteRecords": 29274,
+  "buildConfiguration": "release",
+  "checkpoints": [
+    {
+      "lifetimePeakResidentBytes": 30375936,
+      "measuredMemoryBytes": 6357808,
+      "measuredMemoryMethod": "Mach physical footprint",
+      "phase": "before",
+      "residentBytes": 30375936
+    },
+    {
+      "lifetimePeakResidentBytes": 202227712,
+      "measuredMemoryBytes": 46187456,
+      "measuredMemoryMethod": "Mach physical footprint",
+      "phase": "loaded",
+      "residentBytes": 137805824
+    },
+    {
+      "lifetimePeakResidentBytes": 202227712,
+      "measuredMemoryBytes": 46187456,
+      "measuredMemoryMethod": "Mach physical footprint",
+      "phase": "state-retained",
+      "residentBytes": 137822208
+    },
+    {
+      "lifetimePeakResidentBytes": 202227712,
+      "measuredMemoryBytes": 46187456,
+      "measuredMemoryMethod": "Mach physical footprint",
+      "phase": "state-released",
+      "residentBytes": 137822208
+    },
+    {
+      "lifetimePeakResidentBytes": 202227712,
+      "measuredMemoryBytes": 46334912,
+      "measuredMemoryMethod": "Mach physical footprint",
+      "phase": "flushed",
+      "residentBytes": 137969664
+    }
+  ],
+  "fixture": {
+    "anchor": 812683500,
+    "ciphertextBytes": 19498535,
+    "days": 7,
+    "entities": 21,
+    "hourlyBuckets": 144,
+    "minuteBuckets": 1440,
+    "records": 33264
+  },
+  "invocation": "AMID_RETAINED_PROFILE=load AMID_RETAINED_DIRECTORY=/private/tmp/amid-owned-retained-profile-21-week-conditional-index-20261002 AMID_RETAINED_DAYS=7 AMID_RETAINED_ENTITIES=21 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun xctest -XCTest AmidCoreTests.RetainedHistoryMemoryProfileTests/testOptInRetainedHistoryMemory /tmp/amid-groups-build/arm64-apple-macosx/release/AmidPackageTests.xctest",
+  "notes": [
+    "Generator and loader must be separate fresh release test processes. Fixed public synthetic test key; no Keychain, host metadata, UI, heap or stack dump.",
+    "Internal default-nil numeric stage callback enabled for this loader only. Whole-load/persist boundaries, no per-record callbacks. indexReady means the index is valid; it may reuse the existing index instead of rebuilding when membership/order is unchanged. Checkpoints read only self Mach memory/getrusage; small recorder/counter overhead included. Numeric Mach replies require returned size to cover each requested field; older captured trials lacked this guard. Diagnostic GUI package frozen before this instrumentation excludes the callback.",
+    "1440 minute buckets plus older hourly buckets generated directly as encrypted version3 fixtures. Production load performs real retention/rollup/persist; wall-clock boundary advancement may reduce or merge oldest buckets. No five-second ingestion or raw ring is simulated.",
+    "21entities means20apps+system;76 means65apps+10projects+system. Names are bounded synthetic strings; entity churn and real metadata lengths are not represented.",
+    "165000record/128MiB ciphertext fixture bound and250MiB production disk cap are not RSS bounds. Lifetime peak includes test startup, but generator allocations are excluded from a fresh loader process.",
+    "Checkpoint RSS is public self Mach task_info; measured memory uses self public TASK_VM_INFO physical footprint (numeric-only helper revision). State uses copy-on-write; releasing a state need not immediately release allocator pages. Heavy fixture validation follows all memory checkpoints; process CPU interval includes validation. Actual runner exit must be recorded separately."
+  ],
+  "observedRunnerExitCode": 0,
+  "process": {
+    "cpuSeconds": 1.113684,
+    "elapsedSeconds": 1.3486315420000001,
+    "interruptWakeups": 14,
+    "interruptWakeupsPerSecond": 10.380893197291094,
+    "involuntaryContextSwitches": 1973,
+    "meanCPUPercentOneCore": 82.57881899665666,
+    "notes": [
+      "Synthetic retained-history fixture only; not a GUI performance gate.",
+      "Elapsed time uses ContinuousClock. CPU and context switches are interval getrusage(RUSAGE_SELF) deltas. Peak RSS is a process-lifetime maximum, including startup and warmup. Wakeups are separate own-process libproc interrupt and package-idle counter deltas; neither is a total of all wakeups. Unavailable or regressed counters are unknown."
+    ],
+    "packageIdleWakeups": 0,
+    "packageIdleWakeupsPerSecond": 0,
+    "peakResidentBytes": 202227712,
+    "voluntaryContextSwitches": 3352
+  },
+  "role": "load",
+  "sourceHashes": {
+    "Sources/AmidCore/History/HistoryStore.swift": "a9dbf664922dc9e75866c241d0e4d2cbc6ef52cf1f56cc699cbb616218da3b9c",
+    "Tests/AmidCoreTests/HistoryPersistenceIndexTests.swift": "829139a33d0f710c650bc6f90d7110859460edc25fb3ed6b199e3ec980f3af07",
+    "Tests/AmidCoreTests/RetainedHistoryMemoryProfileTests.swift": "0867e88eb515a739530f60b93351e3aacab3e8b9a63af1f136cf084030d6a621"
+  },
+  "sourceVariant": "persist rebuilds aggregates/index only for membership changes or out-of-order starts; wholeload pool retained",
+  "stages": [
+    {
+      "aggregateCount": 33264,
+      "encodedSegmentCount": 0,
+      "memory": {
+        "lifetimePeakResidentBytes": 81723392,
+        "measuredMemoryBytes": 57312120,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "decoded",
+        "residentBytes": 81723392
+      },
+      "stage": "decoded"
+    },
+    {
+      "aggregateCount": 33264,
+      "encodedSegmentCount": 0,
+      "memory": {
+        "lifetimePeakResidentBytes": 86949888,
+        "measuredMemoryBytes": 62505848,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "validated",
+        "residentBytes": 86949888
+      },
+      "stage": "validated"
+    },
+    {
+      "aggregateCount": 33264,
+      "encodedSegmentCount": 0,
+      "memory": {
+        "lifetimePeakResidentBytes": 86949888,
+        "measuredMemoryBytes": 62505848,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "assigned",
+        "residentBytes": 86949888
+      },
+      "stage": "assigned"
+    },
+    {
+      "aggregateCount": 32319,
+      "encodedSegmentCount": 0,
+      "memory": {
+        "lifetimePeakResidentBytes": 136232960,
+        "measuredMemoryBytes": 111739816,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "enforced",
+        "residentBytes": 136232960
+      },
+      "stage": "enforced"
+    },
+    {
+      "aggregateCount": 32319,
+      "encodedSegmentCount": 0,
+      "memory": {
+        "lifetimePeakResidentBytes": 158711808,
+        "measuredMemoryBytes": 134235072,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "grouped",
+        "residentBytes": 158711808
+      },
+      "stage": "grouped"
+    },
+    {
+      "aggregateCount": 32319,
+      "encodedSegmentCount": 1539,
+      "memory": {
+        "lifetimePeakResidentBytes": 189120512,
+        "measuredMemoryBytes": 164660208,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "encoded",
+        "residentBytes": 189120512
+      },
+      "stage": "encoded"
+    },
+    {
+      "aggregateCount": 32319,
+      "encodedSegmentCount": 1539,
+      "memory": {
+        "lifetimePeakResidentBytes": 202227712,
+        "measuredMemoryBytes": 178013168,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "written",
+        "residentBytes": 202227712
+      },
+      "stage": "written"
+    },
+    {
+      "aggregateCount": 32319,
+      "encodedSegmentCount": 1539,
+      "memory": {
+        "lifetimePeakResidentBytes": 202227712,
+        "measuredMemoryBytes": 178013168,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "indexReady",
+        "residentBytes": 202227712
+      },
+      "stage": "indexReady"
+    },
+    {
+      "aggregateCount": 32319,
+      "encodedSegmentCount": 0,
+      "memory": {
+        "lifetimePeakResidentBytes": 202227712,
+        "measuredMemoryBytes": 46187456,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "loadReturned",
+        "residentBytes": 137805824
+      },
+      "stage": "loadReturned"
+    },
+    {
+      "aggregateCount": 32319,
+      "encodedSegmentCount": 0,
+      "memory": {
+        "lifetimePeakResidentBytes": 202227712,
+        "measuredMemoryBytes": 46187456,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "grouped",
+        "residentBytes": 137822208
+      },
+      "stage": "grouped"
+    },
+    {
+      "aggregateCount": 32319,
+      "encodedSegmentCount": 0,
+      "memory": {
+        "lifetimePeakResidentBytes": 202227712,
+        "measuredMemoryBytes": 46187456,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "encoded",
+        "residentBytes": 137822208
+      },
+      "stage": "encoded"
+    },
+    {
+      "aggregateCount": 32319,
+      "encodedSegmentCount": 0,
+      "memory": {
+        "lifetimePeakResidentBytes": 202227712,
+        "measuredMemoryBytes": 46334912,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "written",
+        "residentBytes": 137969664
+      },
+      "stage": "written"
+    },
+    {
+      "aggregateCount": 32319,
+      "encodedSegmentCount": 0,
+      "memory": {
+        "lifetimePeakResidentBytes": 202227712,
+        "measuredMemoryBytes": 46334912,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "indexReady",
+        "residentBytes": 137969664
+      },
+      "stage": "indexReady"
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Init Memory"
+  short_description: "Seed memory from existing code"
+  default_prompt: "Use $init-memory to analyze this existing repo and propose memory-bank contents."

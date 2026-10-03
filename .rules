@@ -1,0 +1,20 @@
+# Project Rules & Learnings
+
+## User preferences
+- GOAL.md explicitly approves routine scoped local implementation, tests, Serel proposals/application and delegation. Preserve genuine consent/publication boundaries.
+
+## Code patterns
+- Process identity is boot UUID + UID + PID + start time. Numeric PID alone never authorizes an action.
+- Keep requested sampling cadence separate from actual elapsed cadence. Gaps must compare elapsed time against the requested policy, not against itself.
+- Swift UInt64.map(Double.init) can select a bit-pattern initializer. Use map { Double($0) } for numeric conversion.
+
+## Gotchas
+- libproc rusage and task-info CPU totals are Mach ticks on the tested Apple silicon host. Convert with mach_timebase_info; reference-test with getrusage timeval seconds.
+- Use per-command DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer and project-local module caches. Do not alter global toolchain selection.
+- An encrypted manifest commits generation membership. Sync directory metadata before deleting superseded generations; never import orphan bucket files.
+
+## Workflow
+- Pause must stop collection without stopping RAM-retention expiry. Clear logical sample references in inspectors, action previews and sampler identity caches as well as the history ring.
+- Actor awaits can return stale settings. Keep the UI draft authoritative and serialize/coalesce saves of its latest revision.
+- Source may be ahead of the packaged binary. Record exact build/test exit and observations; never let a source correction imply a passed UI or performance gate.
+- Serel Memory is primary for private local project memory; Kit verify-map records real runs separately from recipes. Keep all memory-bank files and backup branches/bundles out of public commits and pushes; publish only curated reusable docs. Hooks remain off.

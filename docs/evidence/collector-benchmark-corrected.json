@@ -1,0 +1,23 @@
+{
+  "durationSeconds" : 1802.8062649965286,
+  "maxObservedMemoryBytes" : 6996592,
+  "meanCPUPercentOneCore" : 0.6265344256612833,
+  "meanCollectionSeconds" : 0.03271867137678993,
+  "notes" : [
+    "Collector-only probe. Memory method follows collector; not a full GUI RSS measurement.",
+    "No matched no-monitor baseline or wakeup measurement; PRD overhead gate is not established by this report."
+  ],
+  "process" : {
+    "cpuSeconds" : 11.293841,
+    "elapsedSeconds" : 1802.8062230348587,
+    "involuntaryContextSwitches" : 8180,
+    "meanCPUPercentOneCore" : 0.626458953585586,
+    "notes" : [
+      "Collector-only probe, after one warmup sample. No matched workload baseline; wakeups unmeasured.",
+      "CPU from getrusage(RUSAGE_SELF) timeval deltas. Peak RSS and context-switch counts are lifetime values; context switches are not wakeups."
+    ],
+    "peakResidentBytes" : 12075008,
+    "voluntaryContextSwitches" : 1527
+  },
+  "samples" : 346
+}

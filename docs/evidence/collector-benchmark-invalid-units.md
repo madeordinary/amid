@@ -1,0 +1,3 @@
+# Invalid CPU benchmark, retained for audit
+
+The initial 1800-second run in collector-benchmark-invalid-units.json divided Mach rusage CPU ticks by 1e9 without mach_timebase_info conversion. The disposable reference-workload probe found a125/3 timebase on this host. Its reported0.017208% is invalid; applying that conversion would approximate0.71702% of one logical core. This is only a corrected estimate, not a new measurement, and exceeds the0.5% target. Memory in that report is physical footprint, not the PRD RSS gate. No passing overhead claim may cite this run. Rerun after the source fix and preserve actual process CPU, RSS, footprint and collector duration separately.

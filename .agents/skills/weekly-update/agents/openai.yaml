@@ -1,0 +1,4 @@
+interface:
+  display_name: "Weekly Update"
+  short_description: "Stakeholder-ready status report"
+  default_prompt: "Use $weekly-update to draft a stakeholder-ready weekly update from the memory bank."

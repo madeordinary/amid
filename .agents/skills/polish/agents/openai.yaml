@@ -1,0 +1,4 @@
+interface:
+  display_name: "Polish"
+  short_description: "Rewrite text to the house rules, diff only"
+  default_prompt: "Use $polish to rewrite the text I name to the house rules in RULES.md and show me the diff. Write nothing."

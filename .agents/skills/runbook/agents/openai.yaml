@@ -1,0 +1,4 @@
+interface:
+  display_name: "Runbook"
+  short_description: "Generate ops runbook"
+  default_prompt: "Use $runbook to generate or update an operational runbook for this service."

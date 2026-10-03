@@ -1,0 +1,22 @@
+{
+  "acceptedSamples" : 35,
+  "createdAt" : "2026-10-02T20:58:50Z",
+  "elapsedSeconds" : 179.593035125,
+  "invalidReasons" : [
+    "Monitoring suspended: screen"
+  ],
+  "lastRequestedCadence" : 5,
+  "lastSampleElapsed" : 179.106579208,
+  "maximumGapSeconds" : 5.382792583000011,
+  "maximumRequestedCadence" : 5,
+  "measurementStartedAt" : "2026-10-02T20:59:20Z",
+  "minimumRequestedCadence" : 5,
+  "observedProcessesAtCompletion" : 555,
+  "phase" : "invalid",
+  "requestedSeconds" : 1800,
+  "retention" : "week",
+  "runID" : "7278FD8C-BAB4-4C0C-9499-106DAD68A77F",
+  "statusUpdatedAt" : "2026-10-02T21:02:20Z",
+  "unavailableSamples" : 0,
+  "warmupSamples" : 6
+}

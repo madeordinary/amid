@@ -1,0 +1,53 @@
+{
+  "scope" : "Synthetic pure executable derivation only; 10 batches × 36 samples × 650 processes per variant per shape. Exact UTF8 Data keys, fresh memo per sample; current-then-memo order. Own process CPU includes harness work. No OS metadata or whole-app performance claim.",
+  "workloads" : [
+    {
+      "current" : {
+        "calls" : 234000,
+        "checksum" : 19342800,
+        "ownCPUSeconds" : 0.369513,
+        "wallSeconds" : 0.369929166
+      },
+      "distinctPaths" : 650,
+      "processes" : 650,
+      "transientMemo" : {
+        "calls" : 234000,
+        "checksum" : 19342800,
+        "ownCPUSeconds" : 0.42966499999999996,
+        "wallSeconds" : 0.43041775
+      }
+    },
+    {
+      "current" : {
+        "calls" : 234000,
+        "checksum" : 18882000,
+        "ownCPUSeconds" : 0.364082,
+        "wallSeconds" : 0.365283583
+      },
+      "distinctPaths" : 65,
+      "processes" : 650,
+      "transientMemo" : {
+        "calls" : 234000,
+        "checksum" : 18882000,
+        "ownCPUSeconds" : 0.060991999999999935,
+        "wallSeconds" : 0.061095042
+      }
+    },
+    {
+      "current" : {
+        "calls" : 234000,
+        "checksum" : 18730800,
+        "ownCPUSeconds" : 0.3649419999999999,
+        "wallSeconds" : 0.365454916
+      },
+      "distinctPaths" : 21,
+      "processes" : 650,
+      "transientMemo" : {
+        "calls" : 234000,
+        "checksum" : 18730800,
+        "ownCPUSeconds" : 0.03269400000000022,
+        "wallSeconds" : 0.032713542
+      }
+    }
+  ]
+}

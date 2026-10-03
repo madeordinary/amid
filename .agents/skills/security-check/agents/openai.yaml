@@ -1,0 +1,4 @@
+interface:
+  display_name: "Security Check"
+  short_description: "OWASP + STRIDE security pass"
+  default_prompt: "Use $security-check to run a security review of the current change against OWASP Top 10 and STRIDE."

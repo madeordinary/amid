@@ -1,0 +1,4 @@
+interface:
+  display_name: "Sync Upstream"
+  short_description: "Pull Serel Memory framework updates"
+  default_prompt: "Use $sync-upstream to check for and pull framework updates from the upstream Serel Memory repo."

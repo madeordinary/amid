@@ -1,0 +1,4 @@
+interface:
+  display_name: "Verify map"
+  short_description: "Feature verification maps in the memory bank"
+  default_prompt: "Use $verify-map to write or refresh the verification map for a feature: how to see it work by hand, and what was last observed."

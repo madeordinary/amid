@@ -1,0 +1,4 @@
+interface:
+  display_name: "Start"
+  short_description: "Orient from the memory bank"
+  default_prompt: "Use $start to summarize this project's memory bank and ask where to pick up."

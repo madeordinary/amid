@@ -1,0 +1,4 @@
+interface:
+  display_name: "Retro"
+  short_description: "Sprint or weekly retrospective"
+  default_prompt: "Use $retro to run a retrospective from the memory bank and recent git activity."

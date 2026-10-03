@@ -1,0 +1,580 @@
+#!/usr/bin/env bash
+# Serel Memory CLI — READ-ONLY.
+#
+# Usage:
+#   bin/serel-memory check [--scope <path>] [--root <repo_root>]
+#
+# `check` is the deterministic drift checker. It compares the effective memory
+# bank against what this repository can prove offline: the anchor parses, the
+# bank exists and is initialized, retention targets are met, and every evidence
+# marker a bank line declares still matches the repo at HEAD. It never writes,
+# never fetches, and never judges whether a claim is *true* — only whether the
+# evidence it declares still holds. Contract: docs/workflow-contract.md
+# "Drift check".
+#
+# Output: one `<KIND> <location> <message>` line per finding
+# (KIND = DRIFT | STALE | INCOMPLETE | WARN | INFO), then one summary line.
+#
+# Exit: 0 clean; 1 drift or stale; 2 an assessment could not finish (any
+# INCOMPLETE, or a structural failure such as a missing helper).
+#
+# Honesty rule for maintainers: every subprocess status is checked. A command
+# that fails becomes an INCOMPLETE finding — never a silent "clean" or "fresh"
+# — and the summary line always prints, including on an unexpected abort.
+set -euo pipefail
+
+SELF="serel-memory"
+
+# Read-only means read-only, including the filesystem: an agent may well run
+# this inside a sandbox that grants no writes anywhere (that is how this
+# project runs its own cross-agent reviews). bash 3.2 backs a here-string or a
+# heredoc with a temp file, so this file uses neither — process substitution
+# reads through /dev/fd instead, and a pipe is out wherever the loop body has
+# to update a counter. tests/smoke-check.sh enforces that structurally.
+
+# The sync-upstream framework allowlist (see .claude/commands/sync-upstream.md).
+# Baseline comparison is bounded to these paths: everything else in a repo is
+# the user's own project.
+FRAMEWORK_PATHS=(.agents/skills/ .claude/commands/ AGENTS.md \
+  docs/workflow-contract.md docs/cross-agent-review.md hooks/ bin/serel-memory)
+
+CORE_FILES=(projectbrief productContext systemPatterns techContext decisionLog activeContext progress)
+
+n_drift=0; n_stale=0; n_incomplete=0; n_warn=0; n_fresh=0; n_unmarked=0
+baseline_label="unavailable"
+summary_printed=0
+in_check=0
+ROOT=""
+SCOPE_ROOT="."
+BANK_DIR="memory-bank"
+
+usage() {
+  printf '%s\n' \
+    "usage: serel-memory check [--scope <path>] [--root <repo_root>]" \
+    "" \
+    "  check   Read-only drift check over the effective memory bank." \
+    "          Exit 0 clean, 1 drift or stale findings, 2 could not finish."
+}
+
+die() { echo "$SELF: $*" >&2; exit 2; }
+
+# Read a whole string, hand back one line of it. Neither helper closes its
+# input early: `head -1` and `grep -q` can SIGPIPE the writer, and under
+# `set -o pipefail` that reads as a failed assessment when nothing failed.
+first_line() { printf '%s\n' "$1" | awk 'NR == 1 { v = $0 } END { print v }'; }
+line_after() { # string prefix -> the rest of the first line starting with prefix
+  printf '%s\n' "$1" | awk -v p="$2" '
+    index($0, p) == 1 && !seen { v = substr($0, length(p) + 1); seen = 1 }
+    END { print v }'
+}
+has_line() { # string prefix -> 0 when some line starts with prefix
+  case $'\n'"$1" in *$'\n'"$2"*) return 0 ;; esac
+  return 1
+}
+
+finding() { # KIND location message
+  printf '%s %s %s\n' "$1" "$2" "$3"
+  case "$1" in
+    DRIFT)      n_drift=$((n_drift + 1)) ;;
+    STALE)      n_stale=$((n_stale + 1)) ;;
+    INCOMPLETE) n_incomplete=$((n_incomplete + 1)) ;;
+    WARN)       n_warn=$((n_warn + 1)) ;;
+  esac
+}
+
+finish() {
+  local code=0
+  if [ "$n_drift" -gt 0 ] || [ "$n_stale" -gt 0 ]; then code=1; fi
+  if [ "$n_incomplete" -gt 0 ]; then code=2; fi
+  summary_printed=1
+  printf '%s check: %d drift, %d stale, %d incomplete, %d warn, %d fresh, %d unmarked, baseline: %s — exit %d\n' \
+    "$SELF" "$n_drift" "$n_stale" "$n_incomplete" "$n_warn" "$n_fresh" "$n_unmarked" "$baseline_label" "$code"
+  exit "$code"
+}
+
+# A check that dies unexpectedly must still say so in the contract's own
+# vocabulary: no silent exit, and never a status that reads as clean.
+on_exit() {
+  local rc=$?
+  [ "$in_check" -eq 1 ] || return 0
+  [ "$summary_printed" -eq 0 ] || return 0
+  finding INCOMPLETE repo "the check aborted before finishing (shell status $rc)"
+  finish
+}
+trap on_exit EXIT
+
+# All git reads go through here: -C into the repo under assessment, and
+# --no-optional-locks so a check never refreshes the index (read-only means
+# read-only, including on a read-only filesystem).
+gitc() { git -C "$ROOT" --no-optional-locks "$@"; }
+
+# Fenced code is opaque everywhere in this file: it is documentation, not a
+# claim. Same rules as hooks/lib/rotate-check.sh — a fence opens with 3+
+# backticks or tildes (at most 3 spaces of indent) and closes only with the
+# same character, at least as long, and nothing but whitespace after — so a
+# ```` fence quoting ``` examples stays one fence.
+# shellcheck disable=SC2016  # backticks here are literal fence markers, not command substitution
+AWK_FENCE='
+  /^ *(```|~~~)/ {
+    fm = $0; sub(/^ */, "", fm)
+    if (length($0) - length(fm) <= 3) {
+      fc = substr(fm, 1, 1)
+      fn = 0; while (substr(fm, fn + 1, 1) == fc) fn++
+      if (!infence) { infence = 1; fch = fc; flen = fn; next }
+      frest = substr(fm, fn + 1); gsub(/[[:space:]]/, "", frest)
+      if (fc == fch && fn >= flen && frest == "") { infence = 0; next }
+    }
+  }
+  infence { next }
+'
+
+# --- Template-only detection --------------------------------------------------
+# A core bank file is "uninitialized" when it carries no content line. Only
+# recognizable scaffolding is discounted: blank lines, headings, HTML comments,
+# fence delimiters, the guidance blockquote a template carries *before its first
+# section*, an empty list marker or task box, a label with no value, and the two
+# shipped placeholder lines that are indistinguishable from real content by
+# shape alone. Everything else is content: one real line makes a file
+# initialized. Prints "TEMPLATE" or "CONTENT".
+#
+# KNOWN-PLACEHOLDER: tests/smoke-check.sh asserts all seven shipped templates
+# still classify as TEMPLATE, so this short list cannot rot silently.
+classify_file() {
+  awk '
+    BEGIN { incomment = 0; content = 0; seen_section = 0; infence = 0 }
+    {
+      out = ""; s = $0
+      do {
+        if (incomment) {
+          e = index(s, "-->")
+          if (e == 0) { s = "" } else { s = substr(s, e + 3); incomment = 0 }
+        } else {
+          b = index(s, "<!--")
+          if (b == 0) { out = out s; s = "" }
+          else { out = out substr(s, 1, b - 1); s = substr(s, b + 4); incomment = 1 }
+        }
+      } while (s != "")
+      line = out
+      gsub(/^[ \t]+/, "", line); gsub(/[ \t]+$/, "", line)
+      if (line == "") next
+      if (line == "- `VAR_NAME` — what it does") next             # KNOWN-PLACEHOLDER
+      if (line == "- **[decision]**: [why] (alternatives: [A], [B])") next   # KNOWN-PLACEHOLDER
+      if (substr(line, 1, 2) == "##") { seen_section = 1; next }  # section heading
+      if (substr(line, 1, 1) == "#") next                        # heading
+      # A blockquote is template guidance only in the preamble; once a section
+      # has started, a quote is the author writing something.
+      if (substr(line, 1, 1) == ">" && !seen_section) next
+      if (line ~ /^(```|~~~)/) next                               # fence delimiter
+      sub(/^([-*+]|[0-9]+\.)[ \t]*/, "", line)                    # list marker
+      sub(/^\[[ xX]\][ \t]*/, "", line)                           # empty task box
+      if (line == "") next
+      t = line
+      gsub(/[*_`]/, "", t)
+      gsub(/[ \t]+$/, "", t)
+      if (t == "") next
+      if (t ~ /:$/) next                                          # label with no value
+      content = 1
+    }
+    END { print (content ? "CONTENT" : "TEMPLATE") }
+  ' "$1"
+}
+
+# --- check --------------------------------------------------------------------
+cmd_check() {
+  local scope="" root=""
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --scope)
+        [ $# -ge 2 ] || die "--scope requires a path (use '.' for the repo root)"
+        scope="$2"; shift 2 ;;
+      --root)
+        [ $# -ge 2 ] || die "--root requires a directory"
+        root="$2"; shift 2 ;;
+      *) usage >&2; die "unknown argument '$1'" ;;
+    esac
+  done
+  in_check=1
+
+  if ! command -v git >/dev/null 2>&1; then
+    finding INCOMPLETE repo "git is required: the checker compares the bank against the repository"
+    finish
+  fi
+  if [ -z "$root" ]; then
+    # A failure here means "not in a repo", which the next guard reports as
+    # INCOMPLETE — the only discarded status in this file that cannot hide one.
+    root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+  fi
+  if [ -z "$root" ] || [ ! -d "$root" ]; then
+    finding INCOMPLETE repo "not a git repository (run inside one, or pass --root <repo_root>)"
+    finish
+  fi
+  if ! ROOT="$(cd "$root" 2>/dev/null && pwd -P)"; then
+    finding INCOMPLETE repo "cannot enter the repo root '$root'"
+    finish
+  fi
+  if ! command -v jq >/dev/null 2>&1; then
+    finding INCOMPLETE repo "jq is required: the anchor and scopes cannot be read without it"
+    finish
+  fi
+
+  local git_ok=1 rc=0
+  gitc rev-parse --verify --quiet HEAD >/dev/null 2>&1 || rc=$?
+  if [ "$rc" -eq 1 ]; then
+    git_ok=0
+  elif [ "$rc" -ne 0 ]; then
+    finding INCOMPLETE repo "git could not read this repository (status $rc)"
+    finish
+  fi
+
+  check_anchor
+  resolve_scope "$scope" || finish
+  check_bank
+  check_retention
+  check_markers "$git_ok"
+  check_unmarked
+  check_baseline "$git_ok"
+  finish
+}
+
+# 1. ANCHOR ---------------------------------------------------------------------
+check_anchor() {
+  local anchor="$ROOT/.serel-memory.json" t key want got toptype
+  if [ -f "$ROOT/.basecamp.json" ]; then
+    finding DRIFT ".basecamp.json" "legacy anchor: migrate — rename it to .serel-memory.json (same schema)"
+  fi
+  if [ ! -f "$anchor" ]; then
+    finding INCOMPLETE ".serel-memory.json" "provenance anchor missing: nothing records which upstream version this project came from"
+    return 0
+  fi
+  if ! toptype="$(jq -r 'type' "$anchor" 2>/dev/null)"; then
+    finding INCOMPLETE ".serel-memory.json" "anchor does not parse as JSON"
+    return 0
+  fi
+  if [ "$toptype" != "object" ]; then
+    finding INCOMPLETE ".serel-memory.json" "anchor must be a JSON object (got $toptype)"
+    return 0
+  fi
+  for t in "upstream string" "ref string" "linked boolean"; do
+    key="${t%% *}"; want="${t##* }"
+    if ! got="$(jq -r --arg k "$key" 'if has($k) then (.[$k] | type) else "absent" end' "$anchor" 2>/dev/null)"; then
+      finding INCOMPLETE ".serel-memory.json" "anchor key \"$key\" could not be read"
+      continue
+    fi
+    if [ "$got" != "$want" ]; then
+      finding INCOMPLETE ".serel-memory.json" "anchor key \"$key\" must be a $want (got $got)"
+    fi
+  done
+}
+
+# 2. BANK -----------------------------------------------------------------------
+# Resolves the scope through the helper (subprocess, never sourced) and reports
+# the helper's own warnings as INCOMPLETE: a degraded resolver means the bank
+# under assessment may not be the one the workflows would target. Sets
+# SCOPE_ROOT and BANK_DIR — no command substitution around the whole call, so
+# findings counted here survive (a subshell's counters would not).
+resolve_scope() {
+  local scope="$1" err out line rc=0
+  local helper="$ROOT/hooks/lib/resolve-scope.sh"
+  if [ ! -f "$helper" ]; then
+    finding INCOMPLETE "hooks/lib/resolve-scope.sh" "scope resolver missing: cannot tell which bank this invocation targets"
+    return 1
+  fi
+  err="$(bash "$helper" --root "$ROOT" --list 2>&1 >/dev/null)" || rc=$?
+  if [ "$rc" -ne 0 ]; then
+    finding INCOMPLETE repo "scope resolver failed listing scopes (status $rc)"
+    return 1
+  fi
+  while IFS= read -r line; do
+    [ -n "$line" ] || continue
+    finding INCOMPLETE repo "scopes: ${line#resolve-scope: }"
+  done < <(printf '%s\n' "$err")
+
+  local args=(--root "$ROOT" --cwd "$PWD")
+  [ -n "$scope" ] && args+=(--scope "$scope")
+  rc=0
+  out="$(bash "$helper" "${args[@]}" 2>/dev/null)" || rc=$?
+  if [ "$rc" -ne 0 ]; then
+    # Re-run only to collect diagnostics; the resolver is read-only, so this
+    # costs nothing but keeps the checker off the filesystem (no temp file).
+    # Diagnostics for a finding already decided above; its own status adds
+    # nothing, and a second failure must not mask the first.
+    err="$(bash "$helper" "${args[@]}" 2>&1 >/dev/null || true)"
+    finding INCOMPLETE repo "scope not resolved (status $rc): $(printf '%s' "$err" | tr '\n' ' ')"
+    return 1
+  fi
+  SCOPE_ROOT="$(printf '%s' "$out" | cut -f1)"
+  BANK_DIR="$(printf '%s' "$out" | cut -f2)"
+  if [ -z "$SCOPE_ROOT" ] || [ -z "$BANK_DIR" ]; then
+    finding INCOMPLETE repo "scope resolver returned no bank"
+    return 1
+  fi
+  return 0
+}
+
+check_bank() {
+  local bank="$BANK_DIR" f overlay=0 verdict
+  case "$bank" in *memory-bank.local) overlay=1 ;; esac
+  if [ ! -d "$ROOT/$bank" ]; then
+    finding DRIFT "$bank" "bank directory missing: this scope has no memory bank yet"
+    return 0
+  fi
+  for f in "${CORE_FILES[@]}"; do
+    if [ ! -f "$ROOT/$bank/$f.md" ]; then
+      # The maintainer overlay is partial by design (contract: "Resolving the
+      # effective bank") — intent for the files it lacks lives in README/docs.
+      if [ "$overlay" -eq 1 ]; then
+        finding INFO "$bank/$f.md" "overlay lacks $f.md (partial by design)"
+      else
+        finding DRIFT "$bank/$f.md" "missing bank file"
+      fi
+      continue
+    fi
+    if ! verdict="$(classify_file "$ROOT/$bank/$f.md")"; then
+      finding INCOMPLETE "$bank/$f.md" "could not read the file: initialization not assessed"
+      continue
+    fi
+    if [ "$verdict" = "TEMPLATE" ]; then
+      finding DRIFT "$bank/$f.md" "uninitialized: $f.md still holds only template placeholders"
+    fi
+  done
+}
+
+# 3. RETENTION -------------------------------------------------------------------
+# Soft targets (contract "Retention"): exceeding one is a WARN, never an error.
+check_retention() {
+  local bank="$BANK_DIR" kind out result
+  local helper="$ROOT/hooks/lib/rotate-check.sh"
+  [ -d "$ROOT/$bank" ] || return 0
+  if [ ! -f "$helper" ]; then
+    finding INCOMPLETE "hooks/lib/rotate-check.sh" "retention helper missing: bank size not assessed"
+    return 0
+  fi
+  for kind in activeContext progress; do
+    [ -f "$ROOT/$bank/$kind.md" ] || continue
+    if ! out="$(bash "$helper" "$ROOT/$bank/$kind.md" "$kind" 2>&1)"; then
+      finding INCOMPLETE "$bank/$kind.md" "retention helper failed: $(first_line "$out")"
+      continue
+    fi
+    if has_line "$out" 'UNSUPPORTED: '; then
+      finding WARN "$bank/$kind.md" "retention cannot see part of $kind.md: $(line_after "$out" 'UNSUPPORTED: ')"
+    fi
+    result="$(line_after "$out" 'RESULT: ')"
+    case "$result" in
+      ROTATE\ *)        finding WARN "$bank/$kind.md" "over the retention target: rotate-check says $result — run /update-memory" ;;
+      OVERAGE-REMAINS*) finding WARN "$bank/$kind.md" "over the retention target: $result" ;;
+    esac
+  done
+}
+
+# 4. EVIDENCE MARKERS ------------------------------------------------------------
+# `verified: <sha> <path> [<path>...]`, one line, outside fenced code, optionally
+# wrapped in parentheses. Paths are whitespace-separated and cannot contain a
+# space or `)` — `)` ends the marker. Every marker on a line is parsed. The
+# assessment is narrow on purpose: it says whether the declared evidence still
+# matches the repo, never whether the claim is true.
+markers_in() {
+  awk "$AWK_FENCE"'
+    {
+      s = $0
+      while ((i = index(s, "verified:")) > 0) {
+        rest = substr(s, i + 9)
+        p = index(rest, ")")
+        if (p > 0) { s = substr(rest, p + 1); rest = substr(rest, 1, p - 1) }
+        else { s = "" }
+        gsub(/^[ \t]+/, "", rest); gsub(/[ \t]+$/, "", rest)
+        print NR "\t" rest
+      }
+    }
+  ' "$1"
+}
+
+check_markers() {
+  local git_ok="$1" bank="$BANK_DIR" files file rel lineno rest scan pre=""
+  [ -d "$ROOT/$bank" ] || return 0
+  if [ "$git_ok" -eq 0 ]; then
+    finding INCOMPLETE repo "no commits yet: evidence markers cannot be checked against HEAD"
+    return 0
+  fi
+  [ "$SCOPE_ROOT" != "." ] && pre="$SCOPE_ROOT/"
+  if ! files="$(find "$ROOT/$bank" -type f -name '*.md' ! -path '*/archive/*' | sort)"; then
+    finding INCOMPLETE "$bank" "could not list bank files: evidence markers not checked"
+    return 0
+  fi
+  [ -n "$files" ] || return 0
+  # The outer loop owns descriptor 3 so the inner one can keep stdin.
+  while IFS= read -r file <&3; do
+    [ -n "$file" ] || continue
+    rel="${file#"$ROOT"/}"
+    if ! scan="$(markers_in "$file")"; then
+      finding INCOMPLETE "$rel" "could not scan the file for evidence markers"
+      continue
+    fi
+    [ -n "$scan" ] || continue
+    while IFS=$'\t' read -r lineno rest; do
+      [ -n "$lineno" ] || continue
+      check_one_marker "$pre" "$rel" "$lineno" "$rest"
+    done < <(printf '%s\n' "$scan")
+  done 3< <(printf '%s\n' "$files")
+}
+
+# git rev-parse --verify --quiet: status 1 means "not there" (a real finding),
+# anything else means git itself could not answer (INCOMPLETE, never "fresh").
+resolves_at() { # revision -> 0 found, 1 absent, 2 git failed
+  local rc=0
+  gitc rev-parse --verify --quiet "$1" >/dev/null 2>&1 || rc=$?
+  case "$rc" in 0) return 0 ;; 1) return 1 ;; *) return 2 ;; esac
+}
+
+check_one_marker() {
+  local pre="$1" rel="$2" lineno="$3" rest="$4"
+  local loc="$rel:$lineno"
+  local -a words resolved
+  read -r -a words < <(printf '%s\n' "$rest")
+  local sha="${words[0]:-}"
+  case "$sha" in
+    '<'*'>')
+      # `verified: <sha> <path>...` written out in prose is the syntax being
+      # described, not a claim being made. A bank that documents the feature —
+      # this one does — is not drifting, and saying so would teach downstream
+      # projects to stop writing about it.
+      return 0 ;;
+  esac
+  if [ -z "$sha" ]; then
+    finding INCOMPLETE "$loc" "marker names no evidence: expected 'verified: <sha> <path> [<path>...]'"
+    return 0
+  fi
+  local st=0
+  resolves_at "$sha^{commit}" || st=$?
+  if [ "$st" -eq 1 ]; then
+    finding INCOMPLETE "$loc" "unknown revision $sha: the declared evidence cannot be compared"
+    return 0
+  elif [ "$st" -ne 0 ]; then
+    finding INCOMPLETE "$loc" "git could not resolve $sha"
+    return 0
+  fi
+  if [ "${#words[@]}" -lt 2 ]; then
+    finding INCOMPLETE "$loc" "marker names no evidence: $sha lists no path"
+    return 0
+  fi
+  local p cand hit
+  for p in "${words[@]:1}"; do
+    hit=""
+    for cand in "$pre$p" "$p"; do
+      st=0
+      resolves_at "HEAD:$cand" || st=$?
+      if [ "$st" -eq 0 ]; then hit="$cand"; break; fi
+      if [ "$st" -eq 2 ]; then
+        finding INCOMPLETE "$loc" "git could not look up $cand at HEAD"
+        return 0
+      fi
+    done
+    if [ -z "$hit" ]; then
+      finding INCOMPLETE "$loc" "evidence path missing at HEAD: $p"
+      return 0
+    fi
+    resolved+=("$hit")
+  done
+
+  local dirty changed rc=0
+  dirty="$(gitc status --porcelain -- "${resolved[@]}" 2>&1)" || rc=$?
+  if [ "$rc" -ne 0 ]; then
+    finding INCOMPLETE "$loc" "git status failed for the declared evidence (status $rc)"
+    return 0
+  fi
+  if [ -n "$dirty" ]; then
+    finding INCOMPLETE "$loc" "evidence dirty in worktree: ${resolved[*]} — commit or stash before checking"
+    return 0
+  fi
+  rc=0
+  changed="$(gitc diff --name-only "$sha" HEAD -- "${resolved[@]}" 2>&1)" || rc=$?
+  if [ "$rc" -ne 0 ]; then
+    finding INCOMPLETE "$loc" "git diff failed for the declared evidence (status $rc)"
+    return 0
+  fi
+  changed="$(printf '%s' "$changed" | tr '\n' ' ')"
+  changed="${changed% }"
+  if [ -n "$changed" ]; then
+    finding STALE "$loc" "declared evidence differs since $sha: $changed"
+  else
+    n_fresh=$((n_fresh + 1))
+  fi
+}
+
+# 5. UNMARKED --------------------------------------------------------------------
+# Counted, never judged: a bullet without a marker is simply not assessed. The
+# count covers the two recognized progress sections only.
+check_unmarked() {
+  local bank="$BANK_DIR" n
+  [ -f "$ROOT/$bank/progress.md" ] || return 0
+  if ! n="$(awk "$AWK_FENCE"'
+    /^## / { insec = ($0 == "## What works" || $0 == "## Recent milestones"); next }
+    insec && /^[-*+] / { if (index($0, "verified:") == 0) n++ }
+    END { print n + 0 }
+  ' "$ROOT/$bank/progress.md")"; then
+    finding INCOMPLETE "$bank/progress.md" "could not scan for unmarked bullets"
+    return 0
+  fi
+  n_unmarked="$n"
+  if [ "$n" -gt 0 ]; then
+    local word="bullets"
+    [ "$n" -eq 1 ] && word="bullet"
+    finding INFO "$bank/progress.md" "$n unmarked $word in recognized sections; semantic claims are not assessed"
+  fi
+}
+
+# 6. FRAMEWORK BASELINE ----------------------------------------------------------
+# Offline only: compares the framework files against the anchor ref when it
+# already resolves locally — a clone or fork that carries the upstream tags, or
+# a private `refs/serel-memory/anchor` left by an interrupted sync. No fetch.
+check_baseline() {
+  local git_ok="$1" ref base="" cand f changed rc=0 st ref_rc=0
+  [ "$git_ok" -eq 1 ] || return 0
+  if [ ! -f "$ROOT/.serel-memory.json" ]; then
+    # check_anchor has already reported the missing anchor; say plainly that
+    # the framework files went uncompared rather than implying they matched.
+    finding INFO repo "no anchor: the framework files were not compared against a baseline"
+    return 0
+  fi
+  ref="$(jq -r 'if type == "object" and (.ref | type) == "string" then .ref else "" end' "$ROOT/.serel-memory.json" 2>/dev/null)" || ref_rc=$?
+  if [ "$ref_rc" -ne 0 ]; then
+    finding INCOMPLETE repo "could not read the anchor ref for the framework baseline (jq status $ref_rc)"
+    return 0
+  fi
+  for cand in "refs/serel-memory/anchor" "$ref"; do
+    [ -n "$cand" ] || continue
+    st=0
+    resolves_at "$cand^{commit}" || st=$?
+    if [ "$st" -eq 0 ]; then base="$cand"; break; fi
+    if [ "$st" -eq 2 ]; then
+      finding INCOMPLETE repo "git could not resolve the baseline ref $cand"
+      return 0
+    fi
+  done
+  if [ -z "$base" ]; then
+    finding INFO repo "no local baseline${ref:+ for $ref}; run sync-upstream to compare framework files"
+    return 0
+  fi
+  changed="$(gitc diff --name-only "$base" -- "${FRAMEWORK_PATHS[@]}" 2>&1)" || rc=$?
+  if [ "$rc" -ne 0 ]; then
+    finding INCOMPLETE repo "framework baseline comparison failed against $base (status $rc)"
+    return 0
+  fi
+  baseline_label="$base"   # name what we actually compared, not what the anchor wants
+  [ -n "$changed" ] || return 0
+  # `git diff --name-only` already emits paths in sorted order, so this list
+  # needs no `sort` — and a pipeline here would swallow its own status.
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    if [ -e "$ROOT/$f" ]; then
+      finding INFO "$f" "differs from anchor baseline $baseline_label (local customization or pending sync)"
+    else
+      finding DRIFT "$f" "framework file missing: present in anchor baseline $baseline_label, absent here"
+    fi
+  done < <(printf '%s\n' "$changed")
+}
+
+case "${1:-}" in
+  check)            shift; cmd_check "$@" ;;
+  -h|--help|help|"") usage ;;
+  *)                usage >&2; die "unknown subcommand '$1' (only 'check' exists)" ;;
+esac

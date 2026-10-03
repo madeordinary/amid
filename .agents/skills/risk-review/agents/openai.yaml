@@ -1,0 +1,4 @@
+interface:
+  display_name: "Risk Review"
+  short_description: "Surface undocumented risks"
+  default_prompt: "Use $risk-review to find risks and assumptions not captured in the memory bank."

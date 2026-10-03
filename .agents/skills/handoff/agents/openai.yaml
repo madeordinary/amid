@@ -1,0 +1,4 @@
+interface:
+  display_name: "Handoff"
+  short_description: "Generate a handoff doc"
+  default_prompt: "Use $handoff to generate a handoff document from the memory bank and recent activity."

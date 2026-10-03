@@ -1,0 +1,4 @@
+interface:
+  display_name: "Update Memory"
+  short_description: "Refresh memory-bank state"
+  default_prompt: "Use $update-memory to propose memory-bank updates from this session."

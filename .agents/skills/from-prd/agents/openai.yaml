@@ -1,0 +1,4 @@
+interface:
+  display_name: "From PRD"
+  short_description: "Seed memory from a PRD"
+  default_prompt: "Use $from-prd with docs/prd.md to seed the memory bank from my PRD."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Decision Log"
+  short_description: "Record a durable decision"
+  default_prompt: "Use $decision-log to record this decision as an ADR and memory-bank entry."

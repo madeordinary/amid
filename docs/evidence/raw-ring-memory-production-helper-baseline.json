@@ -1,0 +1,69 @@
+{
+  "afterClear": {
+    "currentFootprintBytes": 23364472,
+    "currentResidentBytes": 120111104,
+    "lifetimePeakResidentBytes": 120111104,
+    "samples": 0
+  },
+  "buildConfiguration": "release",
+  "checkpoints": [
+    {
+      "currentFootprintBytes": 6636312,
+      "currentResidentBytes": 31080448,
+      "lifetimePeakResidentBytes": 31080448,
+      "samples": 0
+    },
+    {
+      "currentFootprintBytes": 28885808,
+      "currentResidentBytes": 53460992,
+      "lifetimePeakResidentBytes": 53460992,
+      "samples": 45
+    },
+    {
+      "currentFootprintBytes": 50955056,
+      "currentResidentBytes": 75546624,
+      "lifetimePeakResidentBytes": 75546624,
+      "samples": 90
+    },
+    {
+      "currentFootprintBytes": 72942408,
+      "currentResidentBytes": 97517568,
+      "lifetimePeakResidentBytes": 97517568,
+      "samples": 135
+    },
+    {
+      "currentFootprintBytes": 95503224,
+      "currentResidentBytes": 120045568,
+      "lifetimePeakResidentBytes": 120045568,
+      "samples": 181
+    }
+  ],
+  "invocation": "AMID_RAW_MEMORY_PROFILE=baseline DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun xctest -XCTest AmidCoreTests.RawRingMemoryProfileTests/testOptInFreshStringRingMemory /tmp/amid-groups-build/arm64-apple-macosx/release/AmidPackageTests.xctest",
+  "mode": "baseline",
+  "notes": [
+    "Release test; each mode must run in a fresh subprocess. 181 logical five-second samples preserve a full15-minute ring. No actual15-minute wait, host process sampling, UI, network, stack or heap dump.",
+    "600fixtures with long UTF8 strings rebuilt every sample;10%haveoneIPv6endpoint. Boot/runtime/reason constants share as production literals. Off retention isolates raw memory; only choice is encrypted with ephemeral key.",
+    "Sharing mode uses the production ProcessStringStorage helper: exact UTF8-equal reuse of prior string storage for the same full process identity. Every current value is independently recreated and compared; executable/CWD changes and missing CWD remain fresh. Endpoint arrays are not shared.",
+    "Current RSS/footprint use public Mach task_info on self; lifetime peak RSS uses getrusage. Memory after clear need not return to baseline because allocator/framework caches can retain freed pages. This fixture cannot prove the size of real process metadata or GUI savings.",
+    "Actual runner exit must be recorded separately. This profile measures the helper with synthetic metadata, not live sampler or GUI savings."
+  ],
+  "observedRunnerExitCode": 0,
+  "process": {
+    "cpuSeconds": 0.344385,
+    "elapsedSeconds": 0.34454525,
+    "interruptWakeups": 3,
+    "interruptWakeupsPerSecond": 8.707129179694103,
+    "involuntaryContextSwitches": 51,
+    "meanCPUPercentOneCore": 99.95348941829846,
+    "notes": [
+      "Synthetic fixture memory experiment, not a GUI performance budget measurement.",
+      "Elapsed time uses ContinuousClock. CPU and context switches are interval getrusage(RUSAGE_SELF) deltas. Peak RSS is a process-lifetime maximum, including startup and warmup. Wakeups are separate own-process libproc interrupt and package-idle counter deltas; neither is a total of all wakeups. Unavailable or regressed counters are unknown."
+    ],
+    "packageIdleWakeups": 0,
+    "packageIdleWakeupsPerSecond": 0,
+    "peakResidentBytes": 120045568,
+    "voluntaryContextSwitches": 0
+  },
+  "processCount": 600,
+  "retainedSamples": 181
+}

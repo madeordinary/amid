@@ -1,0 +1,46 @@
+{
+  "measurement" : {
+    "cpuSeconds" : 1.27508,
+    "elapsedSeconds" : 189.47719,
+    "interruptWakeups" : 332,
+    "interruptWakeupsPerSecond" : 1.752189801843694,
+    "involuntaryContextSwitches" : 2030,
+    "meanCPUPercentOneCore" : 0.6729464375104992,
+    "notes" : [
+      "Full GUI with accessible process metadata; 30-second warmup. Temporary encrypted storage obeys monitoring.retention.",
+      "Elapsed time uses ContinuousClock. CPU and context switches are interval getrusage(RUSAGE_SELF) deltas. Peak RSS is a process-lifetime maximum, including startup and warmup. Wakeups are separate own-process libproc interrupt and package-idle counter deltas; neither is a total of all wakeups. Unavailable or regressed counters are unknown."
+    ],
+    "packageIdleWakeups" : 6,
+    "packageIdleWakeupsPerSecond" : 0.03166608075621134,
+    "peakResidentBytes" : 122404864,
+    "voluntaryContextSwitches" : 47
+  },
+  "monitoring" : {
+    "acceptedSamples" : 18,
+    "createdAt" : "2026-10-03T02:36:03Z",
+    "elapsedSeconds" : 189.477205,
+    "invalidReasons" : [
+
+    ],
+    "lastRequestedCadence" : 10,
+    "lastSampleElapsed" : 178.90823725,
+    "maximumGapSeconds" : 10.699988416,
+    "maximumRequestedCadence" : 10,
+    "measurementStartedAt" : "2026-10-03T02:36:35Z",
+    "minimumRequestedCadence" : 10,
+    "observedProcessesAtCompletion" : 1082,
+    "phase" : "completed",
+    "presentationMode" : "normal",
+    "requestedSeconds" : 180,
+    "retention" : "week",
+    "runID" : "738F0564-1167-4E61-BDA1-D4727214A975",
+    "statusUpdatedAt" : "2026-10-03T02:39:44Z",
+    "unavailableSamples" : 0,
+    "warmupSamples" : 3
+  },
+  "notes" : [
+    "Only monitoring.phase=completed describes a continuous sampling run; this is not a reference-hardware or baseline pass.",
+    "Peak RSS includes startup and warmup. Wakeup counters are separate public own-process counters.",
+    "Status heartbeat writes occur at most once per minute and are included in measured cost."
+  ]
+}

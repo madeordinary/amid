@@ -1,0 +1,46 @@
+{
+  "measurement" : {
+    "cpuSeconds" : 2.6676520000000004,
+    "elapsedSeconds" : 180.152846792,
+    "interruptWakeups" : 446,
+    "interruptWakeupsPerSecond" : 2.4756755607361596,
+    "involuntaryContextSwitches" : 10913,
+    "meanCPUPercentOneCore" : 1.480771493486309,
+    "notes" : [
+      "Full GUI with accessible process metadata; 30-second warmup. Temporary encrypted storage obeys monitoring.retention.",
+      "Elapsed time uses ContinuousClock. CPU and context switches are interval getrusage(RUSAGE_SELF) deltas. Peak RSS is a process-lifetime maximum, including startup and warmup. Wakeups are separate own-process libproc interrupt and package-idle counter deltas; neither is a total of all wakeups. Unavailable or regressed counters are unknown."
+    ],
+    "packageIdleWakeups" : 1,
+    "packageIdleWakeupsPerSecond" : 0.005550842064430851,
+    "peakResidentBytes" : 134561792,
+    "voluntaryContextSwitches" : 2486
+  },
+  "monitoring" : {
+    "acceptedSamples" : 33,
+    "createdAt" : "2026-10-03T01:47:28Z",
+    "elapsedSeconds" : 180.15284925,
+    "invalidReasons" : [
+
+    ],
+    "lastRequestedCadence" : 10,
+    "lastSampleElapsed" : 180.152762167,
+    "maximumGapSeconds" : 10.81308687500001,
+    "maximumRequestedCadence" : 10,
+    "measurementStartedAt" : "2026-10-03T01:48:00Z",
+    "minimumRequestedCadence" : 5,
+    "observedProcessesAtCompletion" : 1036,
+    "phase" : "completed",
+    "presentationMode" : "normal",
+    "requestedSeconds" : 180,
+    "retention" : "week",
+    "runID" : "09397275-423D-4E8B-8424-76FE24DAF377",
+    "statusUpdatedAt" : "2026-10-03T01:51:00Z",
+    "unavailableSamples" : 0,
+    "warmupSamples" : 6
+  },
+  "notes" : [
+    "Only monitoring.phase=completed describes a continuous sampling run; this is not a reference-hardware or baseline pass.",
+    "Peak RSS includes startup and warmup. Wakeup counters are separate public own-process counters.",
+    "Status heartbeat writes occur at most once per minute and are included in measured cost."
+  ]
+}

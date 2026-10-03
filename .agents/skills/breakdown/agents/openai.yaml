@@ -1,0 +1,4 @@
+interface:
+  display_name: "Breakdown"
+  short_description: "Break down before editing"
+  default_prompt: "Use $breakdown to break this task into a concrete plan before implementation."

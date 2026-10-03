@@ -1,0 +1,4 @@
+interface:
+  display_name: "Analyze Memory"
+  short_description: "Audit memory claims against repository evidence"
+  default_prompt: "Use $analyze to audit the memory bank against repository evidence without changing files."

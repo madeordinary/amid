@@ -1,0 +1,47 @@
+{
+  "measurement" : {
+    "cpuSeconds" : 1.760363,
+    "elapsedSeconds" : 180.620020917,
+    "interruptWakeups" : 370,
+    "interruptWakeupsPerSecond" : 2.0484993752161365,
+    "involuntaryContextSwitches" : 4992,
+    "meanCPUPercentOneCore" : 0.9746222988252982,
+    "notes" : [
+      "Full GUI with accessible process metadata; 30-second warmup. Temporary encrypted storage obeys monitoring.retention.",
+      "Elapsed time uses ContinuousClock. CPU and context switches are interval getrusage(RUSAGE_SELF) deltas. Peak RSS is a process-lifetime maximum, including startup and warmup. Wakeups are separate own-process libproc interrupt and package-idle counter deltas; neither is a total of all wakeups. Unavailable or regressed counters are unknown."
+    ],
+    "packageIdleWakeups" : 3,
+    "packageIdleWakeupsPerSecond" : 0.01660945439364435,
+    "peakResidentBytes" : 142589952,
+    "voluntaryContextSwitches" : 356
+  },
+  "monitoring" : {
+    "acceptedSamples" : 29,
+    "createdAt" : "2026-10-03T01:52:00Z",
+    "elapsedSeconds" : 180.620028084,
+    "invalidReasons" : [
+
+    ],
+    "lastRequestedCadence" : 5,
+    "lastSampleElapsed" : 175.328417125,
+    "maximumGapSeconds" : 10.711800541999995,
+    "maximumRequestedCadence" : 10,
+    "measurementStartedAt" : "2026-10-03T01:52:32Z",
+    "minimumRequestedCadence" : 5,
+    "observedProcessesAtCompletion" : 1092,
+    "phase" : "completed",
+    "presentationMode" : "hiddenOverviewSuppressed",
+    "requestedSeconds" : 180,
+    "retention" : "week",
+    "runID" : "491B5162-58E7-430A-97BE-CE1BD8A82E4A",
+    "statusUpdatedAt" : "2026-10-03T01:55:32Z",
+    "unavailableSamples" : 0,
+    "warmupSamples" : 3
+  },
+  "notes" : [
+    "Only monitoring.phase=completed describes a continuous sampling run; this is not a reference-hardware or baseline pass.",
+    "Peak RSS includes startup and warmup. Wakeup counters are separate public own-process counters.",
+    "Status heartbeat writes occur at most once per minute and are included in measured cost.",
+    "Hidden Overview suppression is a causal diagnostic experiment, never normal-app acceptance performance evidence."
+  ]
+}

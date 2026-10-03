@@ -1,0 +1,58 @@
+# SwiftPM, Xcode and generated application packages
+.build/
+.swiftpm/
+/build/
+DerivedData/
+xcuserdata/
+*.xcuserstate
+*.app/
+*.dSYM/
+*.xcarchive/
+*.xcresult/
+*.dmg
+*.pkg
+
+# Fixture dependencies and local caches
+node_modules/
+__pycache__/
+*.py[cod]
+.venv/
+
+# macOS and editor state
+.DS_Store
+.AppleDouble
+.LSOverride
+*.swp
+*.swo
+*~
+.claude/settings.local.json
+.codex/*.local.*
+
+# Credentials and signing material; reviewed examples may be committed
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.p8
+*.p12
+*.pfx
+*.pem
+*.key
+*.keychain
+*.keychain-db
+*.mobileprovision
+*.provisionprofile
+
+# Runtime data, private diagnostics and unreviewed run output
+*.aesgcm
+*.log
+/diagnostics/
+/exports/
+artifacts/private/
+
+# Private working memory and drafting records; reusable Serel workflows stay tracked
+/memory-bank/
+/docs/evidence/*.diff
+/docs/evidence/network-observation.csv
+/docs/serel-seed.diff
+/docs/serel-seed-proposal.md

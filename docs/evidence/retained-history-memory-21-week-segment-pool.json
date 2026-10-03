@@ -1,0 +1,80 @@
+{
+  "actualCiphertextBytes": 19434070,
+  "actualHourRecords": 3045,
+  "actualMinuteRecords": 30009,
+  "buildConfiguration": "release",
+  "checkpoints": [
+    {
+      "lifetimePeakResidentBytes": 30294016,
+      "measuredMemoryBytes": 6292248,
+      "measuredMemoryMethod": "Mach physical footprint",
+      "phase": "before",
+      "residentBytes": 30294016
+    },
+    {
+      "lifetimePeakResidentBytes": 217792512,
+      "measuredMemoryBytes": 51987392,
+      "measuredMemoryMethod": "Mach physical footprint",
+      "phase": "loaded",
+      "residentBytes": 148013056
+    },
+    {
+      "lifetimePeakResidentBytes": 217792512,
+      "measuredMemoryBytes": 51987392,
+      "measuredMemoryMethod": "Mach physical footprint",
+      "phase": "state-retained",
+      "residentBytes": 148045824
+    },
+    {
+      "lifetimePeakResidentBytes": 217792512,
+      "measuredMemoryBytes": 51987392,
+      "measuredMemoryMethod": "Mach physical footprint",
+      "phase": "state-released",
+      "residentBytes": 148045824
+    },
+    {
+      "lifetimePeakResidentBytes": 217792512,
+      "measuredMemoryBytes": 102761432,
+      "measuredMemoryMethod": "Mach physical footprint",
+      "phase": "flushed",
+      "residentBytes": 198918144
+    }
+  ],
+  "fixture": {
+    "anchor": 812683500,
+    "ciphertextBytes": 19498535,
+    "days": 7,
+    "entities": 21,
+    "hourlyBuckets": 144,
+    "minuteBuckets": 1440,
+    "records": 33264
+  },
+  "invocation": "AMID_RETAINED_PROFILE=load AMID_RETAINED_DIRECTORY=/private/tmp/amid-owned-retained-profile-21-week-segment-pool-20261002 AMID_RETAINED_DAYS=7 AMID_RETAINED_ENTITIES=21 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun xctest -XCTest AmidCoreTests.RetainedHistoryMemoryProfileTests/testOptInRetainedHistoryMemory /tmp/amid-groups-build/arm64-apple-macosx/release/AmidPackageTests.xctest",
+  "measurementHelperRevision": "numeric-only self Mach RSS/physical footprint; heavyvalidation afterflush",
+  "notes": [
+    "Generator and loader must be separate fresh release test processes. Fixed public synthetic test key; no Keychain, host metadata, UI, heap or stack dump.",
+    "1440 minute buckets plus older hourly buckets generated directly as encrypted version3 fixtures. Production load performs real retention/rollup/persist; wall-clock boundary advancement may reduce or merge oldest buckets. No five-second ingestion or raw ring is simulated.",
+    "21entities means20apps+system;76 means65apps+10projects+system. Names are bounded synthetic strings; entity churn and real metadata lengths are not represented.",
+    "165000record/128MiB ciphertext fixture bound and250MiB production disk cap are not RSS bounds. Lifetime peak includes test startup, but generator allocations are excluded from a fresh loader process.",
+    "Checkpoint RSS is public self Mach task_info; measured memory uses self public TASK_VM_INFO physical footprint (numeric-only helper revision). State uses copy-on-write; releasing a state need not immediately release allocator pages. Heavy fixture validation follows all memory checkpoints; process CPU interval includes validation. Actual runner exit must be recorded separately."
+  ],
+  "observedRunnerExitCode": 0,
+  "process": {
+    "cpuSeconds": 1.247315,
+    "elapsedSeconds": 1.524303792,
+    "interruptWakeups": 14,
+    "interruptWakeupsPerSecond": 9.184520876662623,
+    "involuntaryContextSwitches": 5366,
+    "meanCPUPercentOneCore": 81.82850469481741,
+    "notes": [
+      "Synthetic retained-history fixture only; not a GUI performance gate.",
+      "Elapsed time uses ContinuousClock. CPU and context switches are interval getrusage(RUSAGE_SELF) deltas. Peak RSS is a process-lifetime maximum, including startup and warmup. Wakeups are separate own-process libproc interrupt and package-idle counter deltas; neither is a total of all wakeups. Unavailable or regressed counters are unknown."
+    ],
+    "packageIdleWakeups": 0,
+    "packageIdleWakeupsPerSecond": 0,
+    "peakResidentBytes": 217792512,
+    "voluntaryContextSwitches": 3531
+  },
+  "role": "load",
+  "sourceVariant": "whole-load plus per-segment decode/encode autoreleasepool"
+}

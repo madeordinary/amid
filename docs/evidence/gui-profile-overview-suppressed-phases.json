@@ -1,0 +1,92 @@
+{
+  "benchmarkPhase" : "completed",
+  "collectionThread" : {
+    "calls" : 29,
+    "cpuSeconds" : 1.1654400000000005,
+    "unknownCPUIntervals" : 0,
+    "unknownWallIntervals" : 0,
+    "wallSeconds" : 1.2282201210000003
+  },
+  "elapsedSeconds" : 180.6207505,
+  "ingestionThread" : {
+    "calls" : 29,
+    "cpuSeconds" : 0.12578200000000003,
+    "unknownCPUIntervals" : 0,
+    "unknownWallIntervals" : 0,
+    "wallSeconds" : 0.13157791700000002
+  },
+  "notes" : [
+    "Verification-only own getrusage(RUSAGE_SELF) CPU seconds and ContinuousClock wall intervals. No process metadata or payloads.",
+    "The profile starts after benchmark begin\/status serialization and finishes after final benchmark serialization. The intervals are close but not identical; benchmark evidence remains separate.",
+    "Supplemental ingestionThread and collectionThread CPU uses the current actor thread only, excludes dispatched worker\/other-thread CPU, and can reflect timer quantization. It is not added to process phase sums or residual subtraction.",
+    "Phases never overlap. Each phase's own-process CPU includes concurrent work during awaited operations; these are coarse intervals, not causal stack attribution.",
+    "Residual is whole interval CPU minus completed phase intervals; it includes SwiftUI, timers, other tasks, uninstrumented work and instrumentation overhead. It is not exclusively rendering.",
+    "Unavailable, nonfinite or regressed counters remain unknown. An unfinished phase makes summed and residual CPU unknown. Benchmark phase is recorded separately; this profile is not a release budget pass."
+  ],
+  "ownCPUSeconds" : 1.761367,
+  "phases" : {
+    "alertRecord" : {
+      "calls" : 29,
+      "cpuSeconds" : 0.0007770000000002497,
+      "unknownCPUIntervals" : 0,
+      "unknownWallIntervals" : 0,
+      "wallSeconds" : 0.0006390009999961421
+    },
+    "alerts" : {
+      "calls" : 29,
+      "cpuSeconds" : 0.07672400000000024,
+      "unknownCPUIntervals" : 0,
+      "unknownWallIntervals" : 0,
+      "wallSeconds" : 0.07309696000000798
+    },
+    "collection" : {
+      "calls" : 29,
+      "cpuSeconds" : 1.1725380000000007,
+      "unknownCPUIntervals" : 0,
+      "unknownWallIntervals" : 0,
+      "wallSeconds" : 1.2303068770001104
+    },
+    "expiry" : {
+      "calls" : 28,
+      "cpuSeconds" : 0.003821999999999992,
+      "unknownCPUIntervals" : 0,
+      "unknownWallIntervals" : 0,
+      "wallSeconds" : 0.004021583000010764
+    },
+    "grouping" : {
+      "calls" : 29,
+      "cpuSeconds" : 0.030337999999999754,
+      "unknownCPUIntervals" : 0,
+      "unknownWallIntervals" : 0,
+      "wallSeconds" : 0.03010641699997052
+    },
+    "historyIngest" : {
+      "calls" : 29,
+      "cpuSeconds" : 0.20954700000000215,
+      "unknownCPUIntervals" : 0,
+      "unknownWallIntervals" : 0,
+      "wallSeconds" : 0.1549949169999394
+    },
+    "notifications" : {
+      "calls" : 29,
+      "cpuSeconds" : 4.400000000126525e-05,
+      "unknownCPUIntervals" : 0,
+      "unknownWallIntervals" : 0,
+      "wallSeconds" : 3.970499999894628e-05
+    },
+    "publication" : {
+      "calls" : 29,
+      "cpuSeconds" : 0.005163000000000251,
+      "unknownCPUIntervals" : 0,
+      "unknownWallIntervals" : 0,
+      "wallSeconds" : 0.005160706999930653
+    },
+    "storeSync" : {
+      "calls" : 29,
+      "cpuSeconds" : 0.00070400000000026,
+      "unknownCPUIntervals" : 0,
+      "unknownWallIntervals" : 0,
+      "wallSeconds" : 0.0006610820000361173
+    }
+  }
+}

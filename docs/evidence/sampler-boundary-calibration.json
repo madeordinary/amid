@@ -1,0 +1,9 @@
+{
+  "coarseCounterReads" : 800,
+  "fineBoundaryReads" : 541000,
+  "iterationsPerSample" : 1082,
+  "ownCPUSeconds" : 0.027888999999999997,
+  "samples" : 100,
+  "scope" : "Synthetic empty sampler instrumentation only; one owned current-thread Mach port, 100 samples × 1082 iterations. Includes dictionary accumulation and report construction; no overhead subtraction or application performance claim.",
+  "wallSeconds" : 0.028331875
+}

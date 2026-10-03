@@ -1,0 +1,81 @@
+{
+  "actualRunnerExitCode": 0,
+  "buildConfiguration": "release",
+  "candidateChanges": [
+    "Per-sample nonempty exact executable application grouping cache",
+    "ResourceGroup deduplication using full ProcessIdentity",
+    "Earlier separate AlertEngine optimization also present in candidate source"
+  ],
+  "comparisonBaseline": "live-pipeline-profile-before-group-cache.json",
+  "finalSourceStatus": "Application grouping cache removed after no detectable sampler phase improvement; ProcessIdentity dedupe and regression retained. Candidate profile is not final-source evidence.",
+  "groupedViewsAtCompletion": 320,
+  "invalidReasons": [],
+  "invocation": "AMID_LIVE_PIPELINE_PROFILE=1 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun xctest -XCTest AmidCoreTests.LivePipelineProfileTests/testOptInRealPipelineSixtySeconds /tmp/amid-groups-build/arm64-apple-macosx/release/AmidPackageTests.xctest",
+  "maximumEnumerated": 818,
+  "maximumGapSeconds": 5.111959417,
+  "maximumInaccessible": 185,
+  "maximumObserved": 632,
+  "minimumEnumerated": 816,
+  "minimumInaccessible": 185,
+  "minimumObserved": 630,
+  "notes": [
+    "Two collector warmup samples five seconds apart; no thirty-second GUI warmup. Twelve expected samples over approximately sixty seconds, sleeping five seconds after each pipeline.",
+    "Phase CPU is whole-process getrusage delta over each async span; unrelated XCTest work can contribute. Phase spans do not overlap. Phase timing/report overhead and sleep are outside named spans.",
+    "Default sorted application/project grouping mimics hidden AppModel refresh. Prior whole HistoryState is not retained. This approximates the core pipeline; no SwiftUI rendering, menu updates, notifications, or allocations measurement.",
+    "Coverage counts report permission-limited process enumeration; inaccessible processes are not inferred. No identities, executable paths, project paths, listener metadata, arguments, environment, source contents or payloads are written to this evidence.",
+    "A short phase profile is not a sustained observer-budget, matched baseline, reference-M1 or full-GUI pass. Runner exit must be checked and recorded separately.",
+    "Before observation had665\u2013668accessible processes; candidate630\u2013632. Sampler CPU over12samples0.311782s\u21920.310956s shows no detectable gain; grouping0.012263s\u21920.007754s is a short candidate reduction under changing host conditions. Alert0.078914s\u21920.012937s also reflects a separate earlier alert optimization; overall CPU difference cannot be assigned solely to application cache or identity dedupe. This report describes the tested candidate source, not any later source revision."
+  ],
+  "phases": {
+    "alertEvaluate": {
+      "calls": 12,
+      "cpuSeconds": 0.012936999999999949,
+      "wallSeconds": 0.012967501
+    },
+    "grouping": {
+      "calls": 12,
+      "cpuSeconds": 0.007754000000000039,
+      "wallSeconds": 0.007793624999999999
+    },
+    "historyIngest": {
+      "calls": 12,
+      "cpuSeconds": 0.030934000000000073,
+      "wallSeconds": 0.031797418
+    },
+    "historyState": {
+      "calls": 12,
+      "cpuSeconds": 4.600000000018478e-05,
+      "wallSeconds": 5.55e-05
+    },
+    "recordAlerts": {
+      "calls": 12,
+      "cpuSeconds": 2.199999999991098e-05,
+      "wallSeconds": 3.5002e-05
+    },
+    "sampler": {
+      "calls": 12,
+      "cpuSeconds": 0.31095599999999995,
+      "wallSeconds": 0.31164054300000005
+    }
+  },
+  "process": {
+    "cpuSeconds": 0.44049,
+    "elapsedSeconds": 61.095995083,
+    "interruptWakeups": 577,
+    "interruptWakeupsPerSecond": 9.444154223466452,
+    "involuntaryContextSwitches": 3055,
+    "meanCPUPercentOneCore": 0.7209801549210983,
+    "notes": [
+      "Whole XCTest process, not the shipped GUI. Temporary encrypted week history.",
+      "Elapsed time uses ContinuousClock. CPU and context switches are interval getrusage(RUSAGE_SELF) deltas. Peak RSS is a process-lifetime maximum, including startup and warmup. Wakeups are separate own-process libproc interrupt and package-idle counter deltas; neither is a total of all wakeups. Unavailable or regressed counters are unknown."
+    ],
+    "packageIdleWakeups": 6,
+    "packageIdleWakeupsPerSecond": 0.09820610977608095,
+    "peakResidentBytes": 44564480,
+    "voluntaryContextSwitches": 8
+  },
+  "runnerExitRecordedAtUTC": "2026-10-02T18:13:03.976086+00:00",
+  "samples": 12,
+  "valid": true,
+  "warmupSamples": 2
+}

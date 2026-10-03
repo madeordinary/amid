@@ -1,0 +1,813 @@
+/* Amid English-first UI catalog. Values intentionally preserve current English wording. */
+/* Static SwiftUI keys resolve automatically where the call uses LocalizedStringKey. */
+/* String-valued helper/model labels listed here need explicit localization; see docs/localization.md. */
+
+/* HistoryScreen.swift:43 */
+"% total capacity" = "% total capacity";
+
+/* HistoryScreen.swift:43 */
+"% · 100 = one core" = "% · 100 = one core";
+
+/* HistoryScreen.swift:24 */
+"1 hour" = "1 hour";
+
+/* HistoryScreen.swift:24, HistoryTypes.swift:7 */
+"24 hours" = "24 hours";
+
+/* HistoryScreen.swift:24, HistoryTypes.swift:7 */
+"30 days" = "30 days";
+
+/* SettingsScreen.swift:105 */
+"5 seconds in the background; 2 seconds in detail; 10 seconds on battery or elevated thermal state. Sleep suspends collection. Wake starts fresh counter baselines." = "5 seconds in the background; 2 seconds in detail; 10 seconds on battery or elevated thermal state. Sleep suspends collection. Wake starts fresh counter baselines.";
+
+/* HistoryScreen.swift:24, HistoryTypes.swift:7 */
+"7 days" = "7 days";
+
+/* SettingsScreen.swift:21 */
+"7 days · recommended" = "7 days · recommended";
+
+/* AmidApp.swift:68 */
+"A clear view of what your Mac is doing." = "A clear view of what your Mac is doing.";
+
+/* SettingsScreen.swift:12 */
+"A little clarity for your Mac." = "A little clarity for your Mac.";
+
+/* HistoryScreen.swift:100 */
+"A recognized native listener observed continuously for two hours, with average CPU below 1% of one core over the last 30 minutes. In-app only; this does not mean unused or safe to stop." = "A recognized native listener observed continuously for two hours, with average CPU below 1% of one core over the last 30 minutes. In-app only; this does not mean unused or safe to stop.";
+
+/* GroupsScreen.swift:196 */
+"A signal requires a valid target and your confirmation. Active requests can be interrupted; no force-kill fallback is available." = "A signal requires a valid target and your confirmation. Active requests can be interrupted; no force-kill fallback is available.";
+
+/* SettingsScreen.swift:93 */
+"Absolute project root boundary" = "Absolute project root boundary";
+
+/* MainWindow.swift:106 */
+"Accessible processes will appear after sampling." = "Accessible processes will appear after sampling.";
+
+/* HistoryScreen.swift:75, MainWindow.swift:141, display labels */
+"Active" = "Active";
+
+/* HistoryScreen.swift:52, display labels */
+"Active pages" = "Active pages";
+
+/* GroupsScreen.swift:205 */
+"Active requests may be interrupted. Only the exact previewed identity receives one SIGTERM. No retry or force kill." = "Active requests may be interrupted. Only the exact previewed identity receives one SIGTERM. No retry or force kill.";
+
+/* SettingsScreen.swift:94 */
+"Add root" = "Add root";
+
+/* GroupsScreen.swift:120 */
+"Address" = "Address";
+
+/* SettingsScreen.swift:67 */
+"Alert rules" = "Alert rules";
+
+/* AmidApp.swift:52 */
+"Alerts" = "Alerts";
+
+/* AmidApp.swift:10, MainWindow.swift:12, MenuPanel.swift:11 */
+"Amid" = "Amid";
+
+/* SettingsScreen.swift:16 */
+"Amid connects observed processes to applications, accessible projects and listening ports. It works offline, without an account." = "Amid connects observed processes to applications, accessible projects and listening ports. It works offline, without an account.";
+
+/* HistoryScreen.swift:30 */
+"Amid enforced its 250 MiB cap after retention and rollups. Older aggregates were removed." = "Amid enforced its 250 MiB cap after retention and rollups. Older aggregates were removed.";
+
+/* GroupsScreen.swift:111 */
+"Amid reads local socket metadata. It does not connect to services, inspect traffic or infer ownership from a port number." = "Amid reads local socket metadata. It does not connect to services, inspect traffic or infer ownership from a port number.";
+
+/* SettingsScreen.swift:17 */
+"Amid reads process identity, executable paths, resource counters, accessible working directories and project-marker existence. It never reads arguments, environment variables, source contents, prompts, credentials or network payloads." = "Amid reads process identity, executable paths, resource counters, accessible working directories and project-marker existence. It never reads arguments, environment variables, source contents, prompts, credentials or network payloads.";
+
+/* AppModel.swift:276 */
+"AmidFixture" = "AmidFixture";
+
+/* MainWindow.swift:149 */
+"APFS volumes may share container capacity. These capacities are never summed." = "APFS volumes may share container capacity. These capacities are never summed.";
+
+/* SettingsScreen.swift:57 */
+"Appearance & startup" = "Appearance & startup";
+
+/* GroupsScreen.swift:25 */
+"Application" = "Application";
+
+/* MainWindow.swift:166 */
+"Application and project totals are alternate views of the same observed processes. Shared memory and inaccessible processes mean their totals need not equal system memory. CPU is 100% per logical core; load is a separate count of runnable work." = "Application and project totals are alternate views of the same observed processes. Shared memory and inaccessible processes mean their totals need not equal system memory. CPU is 100% per logical core; load is a separate count of runnable work.";
+
+/* GroupsScreen.swift:42 */
+"Application and project views overlap; do not add their totals. Unknown activity is excluded from observed totals." = "Application and project views overlap; do not add their totals. Unknown activity is excluded from observed totals.";
+
+/* AmidApp.swift:51 */
+"Applications" = "Applications";
+
+/* HistoryScreen.swift:97 */
+"At least 1 GiB and 25% growth over 30 continuously observed minutes using a consistent memory method. This is not a leak diagnosis." = "At least 1 GiB and 25% growth over 30 continuously observed minutes using a consistent memory method. This is not a leak diagnosis.";
+
+/* HistoryScreen.swift:98 */
+"At least 1 GiB swap growth over 15 minutes while pressure is warning or critical. Swap alone does not establish trouble." = "At least 1 GiB swap growth over 15 minutes while pressure is warning or critical. Swap alone does not establish trouble.";
+
+/* HistoryScreen.swift:96 */
+"At least 25% of total logical CPU capacity on average for five minutes. Raw CPU uses 100% per logical core." = "At least 25% of total logical CPU capacity on average for five minutes. Raw CPU uses 100% per logical core.";
+
+/* MainWindow.swift:106 */
+"Awaiting applications" = "Awaiting applications";
+
+/* display labels */
+"Awaiting delta" = "Awaiting delta";
+
+/* AppModel.swift:49 */
+"Awaiting your choice" = "Awaiting your choice";
+
+/* MainWindow.swift:133 */
+"Battery" = "Battery";
+
+/* MainWindow.swift:134 */
+"Battery health" = "Battery health";
+
+/* MainWindow.swift:13 */
+"BY MADE ORDINARY" = "BY MADE ORDINARY";
+
+/* GroupsScreen.swift:213, SettingsScreen.swift:112, SettingsScreen.swift:128 */
+"Cancel" = "Cancel";
+
+/* display labels */
+"Charging" = "Charging";
+
+/* SettingsScreen.swift:130 */
+"Choose export location…" = "Choose export location…";
+
+/* SettingsScreen.swift:19 */
+"Choose your local history" = "Choose your local history";
+
+/* MenuPanel.swift:16 */
+"Choose your local history preference to begin." = "Choose your local history preference to begin.";
+
+/* SettingsScreen.swift:110 */
+"Clear app-managed history?" = "Clear app-managed history?";
+
+/* SettingsScreen.swift:111 */
+"Clear History" = "Clear History";
+
+/* SettingsScreen.swift:51 */
+"Clear History…" = "Clear History…";
+
+/* SettingsScreen.swift:54 */
+"Clear removes app-managed measurements, alerts, action records and caches. It preserves preferences and aliases. Exported files, backups and OS crash dumps remain outside this deletion." = "Clear removes app-managed measurements, alerts, action records and caches. It preserves preferences and aliases. Exported files, backups and OS crash dumps remain outside this deletion.";
+
+/* MainWindow.swift:129 */
+"Compressed memory" = "Compressed memory";
+
+/* GroupsScreen.swift:215 */
+"Confirm graceful stop" = "Confirm graceful stop";
+
+/* MainWindow.swift:109 */
+"Connections made from observed metadata." = "Connections made from observed metadata.";
+
+/* GroupsScreen.swift:34 */
+"Coverage" = "Coverage";
+
+/* MainWindow.swift:166 */
+"Coverage has a boundary" = "Coverage has a boundary";
+
+/* HistoryScreen.swift:51 */
+"CPU / memory coverage" = "CPU / memory coverage";
+
+/* HistoryScreen.swift:49 */
+"CPU avg / max" = "CPU avg / max";
+
+/* HistoryScreen.swift:34 */
+"CPU over time" = "CPU over time";
+
+/* GroupsScreen.swift:31 */
+"CPU · 100% = 1 core" = "CPU · 100% = 1 core";
+
+/* GroupsScreen.swift:166 */
+"CPU · one core = 100%" = "CPU · one core = 100%";
+
+/* display labels */
+"Critical" = "Critical";
+
+/* GroupsScreen.swift:61 */
+"Custom name" = "Custom name";
+
+/* SettingsScreen.swift:62 */
+"Deliver macOS notifications" = "Deliver macOS notifications";
+
+/* AppModel.swift:267 */
+"Diagnostics could not be saved at the selected location." = "Diagnostics could not be saved at the selected location.";
+
+/* HistoryScreen.swift:76 */
+"Dismiss" = "Dismiss";
+
+/* GroupsScreen.swift:159 */
+"Done" = "Done";
+
+/* GroupsScreen.swift:133 */
+"Each IPv4/IPv6 or shared listener stays attached to its observed identity. Only the bundled development fixture has a validated stop adapter. Other listeners remain read-only." = "Each IPv4/IPv6 or shared listener stays attached to its observed identity. Only the bundled development fixture has a validated stop adapter. Other listeners remain read-only.";
+
+/* HistoryScreen.swift:34 */
+"Each mark represents a measured bucket. Height shows its average; whiskers retain the recorded range." = "Each mark represents a measured bucket. Height shows its average; whiskers retain the recorded range.";
+
+/* SettingsScreen.swift:48 */
+"Encrypted storage" = "Encrypted storage";
+
+/* HistoryScreen.swift:66 */
+"Evidence, not a diagnosis" = "Evidence, not a diagnosis";
+
+/* GroupsScreen.swift:63 */
+"Exclude from saved history" = "Exclude from saved history";
+
+/* GroupsScreen.swift:169 */
+"Executable" = "Executable";
+
+/* display labels */
+"External power" = "External power";
+
+/* GroupsScreen.swift:121 */
+"Family / scope" = "Family / scope";
+
+/* MainWindow.swift:146 */
+"Free" = "Free";
+
+/* GroupsScreen.swift:171 */
+"Grouping evidence" = "Grouping evidence";
+
+/* AmidApp.swift:52 */
+"History" = "History";
+
+/* SettingsScreen.swift:44 */
+"History & privacy" = "History & privacy";
+
+/* HistoryScreen.swift:32 */
+"History begins after your choice. Sleep, quit and missing samples are gaps; no earlier activity is reconstructed." = "History begins after your choice. Sleep, quit and missing samples are gaps; no earlier activity is reconstructed.";
+
+/* SettingsScreen.swift:20 */
+"History duration" = "History duration";
+
+/* SettingsScreen.swift:59 */
+"Icon only" = "Icon only";
+
+/* GroupsScreen.swift:163 */
+"Identity" = "Identity";
+
+/* SettingsScreen.swift:63 */
+"In-app alerts work without notification permission. Denying permission does not disable monitoring." = "In-app alerts work without notification permission. Denying permission does not disable monitoring.";
+
+/* GroupsScreen.swift:115 */
+"Inaccessible socket ownership remains unknown. Containers and hidden owners are outside coverage." = "Inaccessible socket ownership remains unknown. Containers and hidden owners are outside coverage.";
+
+/* MainWindow.swift:142 */
+"Inactive" = "Inactive";
+
+/* SettingsScreen.swift:87 */
+"Include application" = "Include application";
+
+/* SettingsScreen.swift:90 */
+"Include project" = "Include project";
+
+/* GroupsScreen.swift:129 */
+"Inspect listener" = "Inspect listener";
+
+/* MainWindow.swift:157 */
+"Interface byte deltas only. Virtual interfaces may overlap; these rates are not added together." = "Interface byte deltas only. Virtual interfaces may overlap; these rates are not added together.";
+
+/* GroupsScreen.swift:184 */
+"Known development fixture" = "Known development fixture";
+
+/* MainWindow.swift:86 */
+"Largest observed applications" = "Largest observed applications";
+
+/* SettingsScreen.swift:61 */
+"Launch at login" = "Launch at login";
+
+/* AppModel.swift:222 */
+"Launch at login could not be changed. Review Login Items in System Settings." = "Launch at login could not be changed. Review Login Items in System Settings.";
+
+/* GroupsScreen.swift:119 */
+"Listener" = "Listener";
+
+/* GroupsScreen.swift:173 */
+"Listening endpoints" = "Listening endpoints";
+
+/* GroupsScreen.swift:111 */
+"Listening endpoints only" = "Listening endpoints only";
+
+/* AmidApp.swift:71 */
+"Listening TCP endpoints and the processes that own them." = "Listening TCP endpoints and the processes that own them.";
+
+/* HistoryScreen.swift:28 */
+"Live samples stay in a bounded 15-minute memory ring and are cleared on lock or quit. Choose retention in Settings to begin saving aggregates." = "Live samples stay in a bounded 15-minute memory ring and are cleared on lock or quit. Choose retention in Settings to begin saving aggregates.";
+
+/* HistoryScreen.swift:53, MainWindow.swift:131 */
+"Load · 1 / 5 / 15 min" = "Load · 1 / 5 / 15 min";
+
+/* MainWindow.swift:149 */
+"Local volumes" = "Local volumes";
+
+/* SettingsScreen.swift:107 */
+"Local volumes are shown individually; shared APFS capacities are never added. Virtual network interfaces can overlap. GPU, temperatures, per-app I/O and container internals are outside this build's coverage." = "Local volumes are shown individually; shared APFS capacities are never added. Virtual network interfaces can overlap. GPU, temperatures, per-app I/O and container internals are outside this build's coverage.";
+
+/* MainWindow.swift:22 */
+"Local. Private. On your Mac." = "Local. Private. On your Mac.";
+
+/* AlertEngine.swift:5 */
+"Low observed CPU" = "Low observed CPU";
+
+/* AmidApp.swift:72 */
+"Measured activity, with coverage and gaps kept visible." = "Measured activity, with coverage and gaps kept visible.";
+
+/* MainWindow.swift:82 */
+"Measurements resume when monitoring is available. Missing readings are never shown as zero." = "Measurements resume when monitoring is available. Missing readings are never shown as zero.";
+
+/* AppModel.swift:55 */
+"Measurements unavailable" = "Measurements unavailable";
+
+/* SettingsScreen.swift:113 */
+"Measurements, alerts, action records and in-memory caches will be removed. Preferences and aliases remain. This does not erase exports or backups." = "Measurements, alerts, action records and in-memory caches will be removed. Preferences and aliases remain. This does not erase exports or backups.";
+
+/* GroupsScreen.swift:32 */
+"Memory" = "Memory";
+
+/* MainWindow.swift:86 */
+"Memory accounting may differ between processes." = "Memory accounting may differ between processes.";
+
+/* HistoryScreen.swift:50 */
+"Memory avg / max" = "Memory avg / max";
+
+/* AlertEngine.swift:5 */
+"Memory increased" = "Memory increased";
+
+/* HistoryScreen.swift:52 */
+"Memory method" = "Memory method";
+
+/* AlertEngine.swift:5, MainWindow.swift:78, MenuPanel.swift:19, SettingsScreen.swift:59 */
+"Memory pressure" = "Memory pressure";
+
+/* SettingsScreen.swift:58 */
+"Menu bar metric" = "Menu bar metric";
+
+/* SettingsScreen.swift:17 */
+"Metadata, with a clear boundary" = "Metadata, with a clear boundary";
+
+/* HistoryScreen.swift:68 */
+"Missing or stale measurements do not trigger events. In-app alerts work without notification permission." = "Missing or stale measurements do not trigger events. In-app alerts work without notification permission.";
+
+/* Models.swift:10 */
+"Mixed footprint / RSS" = "Mixed footprint / RSS";
+
+/* AmidApp.swift:18 */
+"Monitor" = "Monitor";
+
+/* AppModel.swift:54 */
+"Monitoring locally" = "Monitoring locally";
+
+/* AppModel.swift:52 */
+"Monitoring paused" = "Monitoring paused";
+
+/* AmidApp.swift:70 */
+"Native workloads connected to accessible project roots." = "Native workloads connected to accessible project roots.";
+
+/* MainWindow.swift:157 */
+"Network interfaces" = "Network interfaces";
+
+/* GroupsScreen.swift:179 */
+"No current observation" = "No current observation";
+
+/* GroupsScreen.swift:115 */
+"No matching listeners observed" = "No matching listeners observed";
+
+/* MainWindow.swift:118, display labels */
+"No observed listeners" = "No observed listeners";
+
+/* MainWindow.swift:126 */
+"No project roots observed. Hidden or inaccessible working directories remain unattributed." = "No project roots observed. Hidden or inaccessible working directories remain unattributed.";
+
+/* HistoryScreen.swift:68 */
+"No recorded alerts" = "No recorded alerts";
+
+/* AppModel.swift:69 */
+"No sample yet" = "No sample yet";
+
+/* HistoryScreen.swift:32 */
+"No saved measurements in this range" = "No saved measurements in this range";
+
+/* display labels */
+"Normal" = "Normal";
+
+/* GroupsScreen.swift:167 */
+"Normalized CPU capacity" = "Normalized CPU capacity";
+
+/* SettingsScreen.swift:29 */
+"Nothing is sampled before you continue." = "Nothing is sampled before you continue.";
+
+/* AppModel.swift:229 */
+"Notification delivery failed. The event remains in Alerts." = "Notification delivery failed. The event remains in Alerts.";
+
+/* AppModel.swift:215 */
+"Notification permission is unavailable. In-app alerts remain available." = "Notification permission is unavailable. In-app alerts remain available.";
+
+/* AppModel.swift:214 */
+"Notifications were not allowed. In-app alerts remain available." = "Notifications were not allowed. In-app alerts remain available.";
+
+/* SettingsScreen.swift:26 */
+"Notifications, launch at login and update checks start off. You can choose notifications and launch at login in Settings. This local build makes no update requests." = "Notifications, launch at login and update checks start off. You can choose notifications and launch at login in Settings. This local build makes no update requests.";
+
+/* HistoryScreen.swift:75, display labels */
+"Observation interrupted" = "Observation interrupted";
+
+/* GroupsScreen.swift:34, display labels */
+"Observed" = "Observed";
+
+/* AmidApp.swift:69 */
+"Observed processes, grouped by their application evidence." = "Observed processes, grouped by their application evidence.";
+
+/* GroupsScreen.swift:165 */
+"Observed since" = "Observed since";
+
+/* HistoryTypes.swift:7, display labels */
+"Off" = "Off";
+
+/* SettingsScreen.swift:23 */
+"Off keeps a 15-minute memory ring only, cleared on lock or quit. Your preferences and aliases are encrypted locally." = "Off keeps a 15-minute memory ring only, cleared on lock or quit. Your preferences and aliases are encrypted locally.";
+
+/* SettingsScreen.swift:64 */
+"Off · no update endpoint in this local build" = "Off · no update endpoint in this local build";
+
+/* display labels */
+"On battery" = "On battery";
+
+/* SettingsScreen.swift:23 */
+"Only compact aggregates are retained, encrypted with a per-install Keychain key. Change retention or clear history at any time." = "Only compact aggregates are retained, encrypted with a per-install Keychain key. Change retention or clear history at any time.";
+
+/* GroupsScreen.swift:197 */
+"Open Activity Monitor" = "Open Activity Monitor";
+
+/* MenuPanel.swift:30 */
+"Open Amid" = "Open Amid";
+
+/* MainWindow.swift:138 */
+"OS page categories can overlap with process accounting; these are not per-app totals." = "OS page categories can overlap with process accounting; these are not per-app totals.";
+
+/* MainWindow.swift:79 */
+"OS-reported available capacity" = "OS-reported available capacity";
+
+/* AmidApp.swift:51 */
+"Overview" = "Overview";
+
+/* GroupsScreen.swift:123 */
+"Owner" = "Owner";
+
+/* GroupsScreen.swift:34, display labels */
+"Partial" = "Partial";
+
+/* MenuPanel.swift:32 */
+"Pause" = "Pause";
+
+/* MainWindow.swift:35, MainWindow.swift:36, SettingsScreen.swift:49 */
+"Pause monitoring" = "Pause monitoring";
+
+/* AmidApp.swift:19 */
+"Pause Monitoring" = "Pause Monitoring";
+
+/* Models.swift:8 */
+"Physical footprint" = "Physical footprint";
+
+/* MainWindow.swift:128 */
+"Physical memory" = "Physical memory";
+
+/* MainWindow.swift:138 */
+"Physical memory categories" = "Physical memory categories";
+
+/* GroupsScreen.swift:118 */
+"Port" = "Port";
+
+/* AmidApp.swift:51 */
+"Ports" = "Ports";
+
+/* SettingsScreen.swift:52 */
+"Preview diagnostics…" = "Preview diagnostics…";
+
+/* GroupsScreen.swift:223 */
+"Preview expires after ten seconds; an expired or changed target is refused." = "Preview expires after ten seconds; an expired or changed target is refused.";
+
+/* GroupsScreen.swift:164 */
+"Process start" = "Process start";
+
+/* GroupsScreen.swift:33 */
+"Processes" = "Processes";
+
+/* GroupsScreen.swift:122, GroupsScreen.swift:170, GroupsScreen.swift:25 */
+"Project" = "Project";
+
+/* AmidApp.swift:51 */
+"Projects" = "Projects";
+
+/* MainWindow.swift:109 */
+"Projects & ports" = "Projects & ports";
+
+/* SettingsScreen.swift:77 */
+"Projects, aliases & exclusions" = "Projects, aliases & exclusions";
+
+/* SettingsScreen.swift:75 */
+"Published durations, cooldown and recovery rules are listed in Alerts. Disabling a rule stops evaluation; retained events remain until their retention expires or you clear history." = "Published durations, cooldown and recovery rules are listed in Alerts. Disabling a rule stops evaluation; retained events remain until their retention expires or you clear history.";
+
+/* HistoryScreen.swift:82 */
+"Published rules" = "Published rules";
+
+/* MenuPanel.swift:33 */
+"Quit" = "Quit";
+
+/* HistoryScreen.swift:23 */
+"Range" = "Range";
+
+/* GroupsScreen.swift:185 */
+"Read-only process" = "Read-only process";
+
+/* HistoryScreen.swift:75, display labels */
+"Recovered" = "Recovered";
+
+/* AmidApp.swift:21 */
+"Refresh Now" = "Refresh Now";
+
+/* MainWindow.swift:38 */
+"Refresh now" = "Refresh now";
+
+/* SettingsScreen.swift:100 */
+"Remove" = "Remove";
+
+/* SettingsScreen.swift:83 */
+"Remove alias" = "Remove alias";
+
+/* SettingsScreen.swift:78 */
+"Rename a group or exclude it from saved history in Applications or Projects. Exclusions do not hide current live readings." = "Rename a group or exclude it from saved history in Applications or Projects. Exclusions do not hide current live readings.";
+
+/* Models.swift:9 */
+"Resident size (RSS)" = "Resident size (RSS)";
+
+/* HistoryScreen.swift:19 */
+"Resource" = "Resource";
+
+/* MenuPanel.swift:32 */
+"Resume" = "Resume";
+
+/* AmidApp.swift:19 */
+"Resume Monitoring" = "Resume Monitoring";
+
+/* MainWindow.swift:35, MainWindow.swift:36 */
+"Resume monitoring" = "Resume monitoring";
+
+/* SettingsScreen.swift:45 */
+"Retain aggregate history" = "Retain aggregate history";
+
+/* SettingsScreen.swift:123 */
+"Review before exporting" = "Review before exporting";
+
+/* GroupsScreen.swift:187 */
+"Review graceful stop…" = "Review graceful stop…";
+
+/* GroupsScreen.swift:204 */
+"Review this server stop" = "Review this server stop";
+
+/* SettingsScreen.swift:102 */
+"Root boundaries resolve nested workspace attribution without opening source files. Separate worktree paths remain distinct." = "Root boundaries resolve nested workspace attribution without opening source files. Separate worktree paths remain distinct.";
+
+/* HistoryScreen.swift:66 */
+"Rules require sustained measurements. Notifications are limited to one per category and entity per hour. Exclude expected build or render workloads in Applications." = "Rules require sustained measurements. Notifications are limited to one per category and entity per hour. Exclude expected build or render workloads in Applications.";
+
+/* AppModel.swift:53 */
+"Sample stale" = "Sample stale";
+
+/* HistoryScreen.swift:54 */
+"Samples" = "Samples";
+
+/* SettingsScreen.swift:104 */
+"Sampling & units" = "Sampling & units";
+
+/* GroupsScreen.swift:62 */
+"Save name" = "Save name";
+
+/* HistoryScreen.swift:28 */
+"Saved history is off" = "Saved history is off";
+
+/* GroupsScreen.swift:110 */
+"Search a port, executable or project" = "Search a port, executable or project";
+
+/* GroupsScreen.swift:17, GroupsScreen.swift:18 */
+"Search applications" = "Search applications";
+
+/* GroupsScreen.swift:17, GroupsScreen.swift:18 */
+"Search projects or ports" = "Search projects or ports";
+
+/* GroupsScreen.swift:39 */
+"Select a row to inspect grouping, measurements and process identities." = "Select a row to inspect grouping, measurements and process identities.";
+
+/* AppModel.swift:50 */
+"Session locked" = "Session locked";
+
+/* AmidApp.swift:52 */
+"Settings" = "Settings";
+
+/* AppModel.swift:51 */
+"Sleeping" = "Sleeping";
+
+/* AmidApp.swift:62 */
+"slider.horizontal.3" = "slider.horizontal.3";
+
+/* MainWindow.swift:42 */
+"Some data is unavailable" = "Some data is unavailable";
+
+/* AmidApp.swift:56 */
+"square.grid.2x2" = "square.grid.2x2";
+
+/* SettingsScreen.swift:31 */
+"Start observing" = "Start observing";
+
+/* MenuPanel.swift:21 */
+"Startup available" = "Startup available";
+
+/* HistoryScreen.swift:99 */
+"Startup available capacity below your threshold (10 GiB by default) for five minutes." = "Startup available capacity below your threshold (10 GiB by default) for five minutes.";
+
+/* AlertEngine.swift:5 */
+"Startup capacity" = "Startup capacity";
+
+/* MainWindow.swift:79 */
+"Startup disk available" = "Startup disk available";
+
+/* GroupsScreen.swift:182 */
+"Stop result" = "Stop result";
+
+/* GroupsScreen.swift:211 */
+"Stop unavailable" = "Stop unavailable";
+
+/* HistoryScreen.swift:30 */
+"Storage cap shortened this history" = "Storage cap shortened this history";
+
+/* AmidApp.swift:73 */
+"Sustained changes worth a closer look." = "Sustained changes worth a closer look.";
+
+/* AlertEngine.swift:5 */
+"Sustained CPU" = "Sustained CPU";
+
+/* MenuPanel.swift:20 */
+"Swap" = "Swap";
+
+/* AlertEngine.swift:5 */
+"Swap increased" = "Swap increased";
+
+/* MainWindow.swift:77, MenuPanel.swift:18, SettingsScreen.swift:59 */
+"System CPU" = "System CPU";
+
+/* SettingsScreen.swift:106 */
+"System CPU is a share of total logical capacity. Application CPU uses 100% per logical core and can exceed 100%. Physical footprint is preferred; RSS fallback is labeled. Memory pressure drives warnings, not RAM fullness." = "System CPU is a share of total logical capacity. Application CPU uses 100% per logical core and can exceed 100%. Physical footprint is preferred; RSS fallback is labeled. Memory pressure drives warnings, not RAM fullness.";
+
+/* SettingsScreen.swift:65 */
+"The app makes no update requests. A release updater requires a published domain and field list plus a separate choice before any traffic." = "The app makes no update requests. A release updater requires a published domain and field list plus a separate choice before any traffic.";
+
+/* AppModel.swift:150 */
+"The requested local performance report could not be completed." = "The requested local performance report could not be completed.";
+
+/* MainWindow.swift:130 */
+"Thermal state" = "Thermal state";
+
+/* SettingsScreen.swift:124 */
+"These are the exact fields in the local JSON export. Aliases may contain names you chose; review them here. Nothing is uploaded." = "These are the exact fields in the local JSON export. Aliases may contain names you chose; review them here. Nothing is uploaded.";
+
+/* GroupsScreen.swift:184 */
+"This bundled server may support one identity-bound SIGTERM after its running code, ownership, project and endpoints are validated. Review the exact target first." = "This bundled server may support one identity-bound SIGTERM after its running code, ownership, project and endpoints are validated. Review the exact target first.";
+
+/* GroupsScreen.swift:179 */
+"This identity is no longer in the latest accessible sample. It may have exited or become inaccessible. Values above are the last captured reading." = "This identity is no longer in the latest accessible sample. It may have exited or become inaccessible. Values above are the last captured reading.";
+
+/* HistoryScreen.swift:48 */
+"Time" = "Time";
+
+/* MenuPanel.swift:23 */
+"TOP OBSERVED MEMORY" = "TOP OBSERVED MEMORY";
+
+/* Models.swift:11 */
+"Unavailable" = "Unavailable";
+
+/* GroupsScreen.swift:122, HistoryScreen.swift:52, display labels */
+"Unknown" = "Unknown";
+
+/* display labels */
+"Unknown / inaccessible" = "Unknown / inaccessible";
+
+/* GroupsScreen.swift:208 */
+"Unknown project" = "Unknown project";
+
+/* GroupsScreen.swift:156, display labels */
+"Unrecognized runtime" = "Unrecognized runtime";
+
+/* SettingsScreen.swift:64 */
+"Update checks" = "Update checks";
+
+/* GroupsScreen.swift:187 */
+"Validating…" = "Validating…";
+
+/* MainWindow.swift:33 */
+"VERIFICATION" = "VERIFICATION";
+
+/* GroupsScreen.swift:58 */
+"View history" = "View history";
+
+/* MainWindow.swift:161 */
+"Virtual / may overlap" = "Virtual / may overlap";
+
+/* display labels */
+"Warning" = "Warning";
+
+/* HistoryScreen.swift:95 */
+"Warning or critical pressure for 60 seconds. Recover after five minutes of normal pressure." = "Warning or critical pressure for 60 seconds. Recover after five minutes of normal pressure.";
+
+/* SettingsScreen.swift:13 */
+"Welcome to Amid by Made Ordinary." = "Welcome to Amid by Made Ordinary.";
+
+/* MainWindow.swift:145 */
+"Wired" = "Wired";
+
+/* AmidApp.swift:74 */
+"Your data, your defaults." = "Your data, your defaults.";
+
+/* Explicit formatted keys used by known product-copy helpers. Arguments stay literal data. */
+"%@ \u00b7 %@ \u00b7 %@" = "%@ \u00b7 %@ \u00b7 %@";
+"%@/s" = "%@/s";
+"%lds" = "%lds";
+"%ldm" = "%ldm";
+"%ldh %ldm" = "%ldh %ldm";
+
+/* History and alert display copy. Format arguments are literal names/definitions. */
+"Warning or critical memory pressure sustained for 60 seconds." = "Warning or critical memory pressure sustained for 60 seconds.";
+"Swap increased at least 1 GiB over 15 minutes with warning or critical pressure." = "Swap increased at least 1 GiB over 15 minutes with warning or critical pressure.";
+"%@: raw CPU %@%% of one core; threshold 25%% of %ld logical cores averaged over five minutes." = "%@: raw CPU %@%% of one core; threshold 25%% of %ld logical cores averaged over five minutes.";
+"%@ memory increased at least 1 GiB and 25%% over 30 continuously observed minutes (%@)." = "%@ memory increased at least 1 GiB and 25%% over 30 continuously observed minutes (%@).";
+"Available capacity below %llu bytes for five minutes. %@" = "Available capacity below %llu bytes for five minutes. %@";
+"%@: continuously observed native development listener for at least 2 hours; average CPU below 1%% of one core in the last 30 minutes. No client or traffic measurement is implied." = "%@: continuously observed native development listener for at least 2 hours; average CPU below 1%% of one core in the last 30 minutes. No client or traffic measurement is implied.";
+"Five-minute average %.1f%% of one core; %.1f%% of total %ld logical-core capacity." = "Five-minute average %.1f%% of one core; %.1f%% of total %ld logical-core capacity.";
+"Encrypted history unavailable. Unlock Keychain or clear the app-owned store to recover. No plaintext fallback." = "Encrypted history unavailable. Unlock Keychain or clear the app-owned store to recover. No plaintext fallback.";
+"Encrypted history could not be saved. No plaintext fallback." = "Encrypted history could not be saved. No plaintext fallback.";
+"Could not clear the encrypted history store." = "Could not clear the encrypted history store.";
+
+/* Final integrated product-copy keys. */
+"%@ · %@ · %@" = "%@ · %@ · %@";
+"%ld active alerts" = "%ld active alerts";
+"%ld listening endpoints" = "%ld listening endpoints";
+"%ld projects" = "%ld projects";
+"Action refused; no signal sent." = "Action refused; no signal sent.";
+"An endpoint has another observed owner; no signal sent." = "An endpoint has another observed owner; no signal sent.";
+"Cancelled; no action taken." = "Cancelled; no action taken.";
+"Identity-bound signal was rejected (code %ld); no retry." = "Identity-bound signal was rejected (code %ld); no retry.";
+"Observed descendants changed; no signal sent." = "Observed descendants changed; no signal sent.";
+"Original target identity no longer matches; no signal sent." = "Original target identity no longer matches; no signal sent.";
+"Preview expired or current validation is unavailable; review a new preview. No signal sent." = "Preview expired or current validation is unavailable; review a new preview. No signal sent.";
+"Previewed server exited; an endpoint has a current observed owner." = "Previewed server exited; an endpoint has a current observed owner.";
+"Previewed server exited; no remaining observed endpoint owner." = "Previewed server exited; no remaining observed endpoint owner.";
+"Public task audit-token acquisition is unavailable for this target." = "Public task audit-token acquisition is unavailable for this target.";
+"Read-only: project and listening endpoint ownership are not fully available." = "Read-only: project and listening endpoint ownership are not fully available.";
+"Read-only: this runtime has no development-server stop adapter." = "Read-only: this runtime has no development-server stop adapter.";
+"Running code signature does not match the trusted fixture build." = "Running code signature does not match the trusted fixture build.";
+"Running code signature does not match the trusted fixture build; no signal sent." = "Running code signature does not match the trusted fixture build; no signal sent.";
+"SIGTERM sent once; original-target verification is unavailable." = "SIGTERM sent once; original-target verification is unavailable.";
+"Still running after SIGTERM; no retry or force kill." = "Still running after SIGTERM; no retry or force kill.";
+"Stop unavailable: no enrolled trusted development-server adapter. PID checks alone cannot prevent reuse; generic runtime metadata cannot establish server intent. A runtime, project marker and listener also cannot establish that this is a disposable development server." = "Stop unavailable: no enrolled trusted development-server adapter. PID checks alone cannot prevent reuse; generic runtime metadata cannot establish server intent. A runtime, project marker and listener also cannot establish that this is a disposable development server.";
+"Stop unavailable: no enrolled trusted development-server adapter. PID checks alone cannot prevent reuse; generic runtime metadata cannot establish server intent." = "Stop unavailable: no enrolled trusted development-server adapter. PID checks alone cannot prevent reuse; generic runtime metadata cannot establish server intent.";
+"Target already exited; no signal sent." = "Target already exited; no signal sent.";
+"Target metadata changed or is unavailable; no signal sent." = "Target metadata changed or is unavailable; no signal sent.";
+"Target validation failed: %@." = "Target validation failed: %@.";
+"Token-bound executable path could not be validated; no signal sent." = "Token-bound executable path could not be validated; no signal sent.";
+"Token-bound executable path validation failed." = "Token-bound executable path validation failed.";
+"Trusted executable metadata no longer matches; no signal sent." = "Trusted executable metadata no longer matches; no signal sent.";
+"Trusted fixture scope or endpoint ownership is incomplete." = "Trusted fixture scope or endpoint ownership is incomplete.";
+"%ld observed · %ld inaccessible · %ld enumerated" = "%ld observed · %ld inaccessible · %ld enumerated";
+"%@s actual cadence · %@" = "%@s actual cadence · %@";
+"Observation reset; review a new preview. No signal sent." = "Observation reset; review a new preview. No signal sent.";
+"SIGTERM was sent once; observation ended after reset. No retry." = "SIGTERM was sent once; observation ended after reset. No retry.";
+"Last 15 minutes · memory only" = "Last 15 minutes · memory only";
+"No observations in the memory window" = "No observations in the memory window";
+"No line is drawn across gaps. %ld raw observations in memory; cleared on lock or quit." = "No line is drawn across gaps. %ld raw observations in memory; cleared on lock or quit.";
+"No line is drawn across gaps. One-minute buckets through 24 hours; hourly buckets after that. %ld retained buckets." = "No line is drawn across gaps. One-minute buckets through 24 hours; hourly buckets after that. %ld retained buckets.";
+"Each mark is one observation from the memory window. Missing intervals remain gaps." = "Each mark is one observation from the memory window. Missing intervals remain gaps.";
+"No measurements in this interval. Processes below are current observations." = "No measurements in this interval. Processes below are current observations.";
+"Recorded CPU peak: %@ · memory peak: %@ · %ld records" = "Recorded CPU peak: %@ · memory peak: %@ · %ld records";
+"Monitoring is suspended; review after resuming." = "Monitoring is suspended; review after resuming.";
+"Preview expires after two minutes; an expired or changed target is refused." = "Preview expires after two minutes; an expired or changed target is refused.";
+"Signals sent: %ld." = "Signals sent: %ld.";
+"Remaining observed identities: %ld; endpoints: %ld." = "Remaining observed identities: %ld; endpoints: %ld.";
+"Remaining process and endpoint state is unavailable." = "Remaining process and endpoint state is unavailable.";
+"Each listener stays attached to its observed identity. Stop requires a supported server build, current ownership checks and your confirmation. Other listeners remain read-only." = "Each listener stays attached to its observed identity. Stop requires a supported server build, current ownership checks and your confirmation. Other listeners remain read-only.";
+"Server validation required" = "Server validation required";
+"Review checks this exact running build, ownership, project association and endpoints. A familiar executable name alone does not enable Stop." = "Review checks this exact running build, ownership, project association and endpoints. A familiar executable name alone does not enable Stop.";
+"The project comes from the observed working directory. It does not establish the served directory or whether clients are connected. Active downloads can be interrupted." = "The project comes from the observed working directory. It does not establish the served directory or whether clients are connected. Active downloads can be interrupted.";
+"Supported use: foreground static-file serving, without daemon, chroot, user/group switching, PID-file, syslog or redirect options. Amid does not inspect launch arguments; this declaration is yours." = "Supported use: foreground static-file serving, without daemon, chroot, user/group switching, PID-file, syslog or redirect options. Amid does not inspect launch arguments; this declaration is yours.";
+"This server uses the supported development mode above, and I intend to stop it." = "This server uses the supported development mode above, and I intend to stop it.";
+"Trusted server scope or endpoint ownership is incomplete." = "Trusted server scope or endpoint ownership is incomplete.";
+"Running code signature does not match the trusted server build." = "Running code signature does not match the trusted server build.";
+"Running code signature does not match the trusted server build; no signal sent." = "Running code signature does not match the trusted server build; no signal sent.";
+"Development-server declaration was not confirmed; no signal sent." = "Development-server declaration was not confirmed; no signal sent.";
+"Actual cadence" = "Actual cadence";
+"Recorded gap" = "Recorded gap";
+"%@ s" = "%@ s";
+"%@–%@ s" = "%@–%@ s";
+"Interrupted time is recorded at the next observation and may span earlier buckets. Empty periods remain gaps." = "Interrupted time is recorded at the next observation and may span earlier buckets. Empty periods remain gaps.";

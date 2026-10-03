@@ -1,0 +1,11 @@
+{
+  "durationSeconds" : 1800.4299850463867,
+  "maxObservedMemoryBytes" : 7275144,
+  "meanCPUPercentOneCore" : 0.017208482974176532,
+  "meanCollectionSeconds" : 0.03736140749849645,
+  "notes" : [
+    "Collector-only probe. Memory method follows collector; not a full GUI RSS measurement.",
+    "No matched no-monitor baseline or wakeup measurement; PRD overhead gate is not established by this report."
+  ],
+  "samples" : 351
+}

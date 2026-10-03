@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ask Claude"
+  short_description: "Get Claude's second opinion"
+  default_prompt: "Use $ask-claude to ask Claude for a second opinion on this plan."

@@ -1,0 +1,170 @@
+{
+  "actualInvocation": "AMID_EXPIRY_PROFILE=1 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun xctest -XCTest AmidAppTests.HistoryExpiryProfileTests/testOptInFilledRingExpiryCost /private/tmp/amid-groups-build/arm64-apple-macosx/release/AmidPackageTests.xctest",
+  "actualRunnerExitCode": 0,
+  "buildConfiguration": "release",
+  "notes": [
+    "Release opt-in XCTest with650syntheticprocesses/65apps and181samples spanning15minutes;30five-second logical ticks per case. No actual150-second wait or process sampling.",
+    "Candidate preserves raw expiry but directly invokes store.expireRecent to isolate omission of the pre-ingest presentation sync. This is a cost experiment, not a shipping lifecycle patch; it does not simulate revision changes, suspension or interrupted refresh behavior.",
+    "Shared immutable synthetic process arrays avoid real per-sample string allocation; timings do not establish the GUI budget or allocation behavior. CPU is whole XCTest process over each case.",
+    "Actual runner exit must be recorded separately. Output contains fixture counts/timings only."
+  ],
+  "results": [
+    {
+      "duplicatePresentationSync": true,
+      "expiryWallSeconds": 0.002174708,
+      "finalRawSamples": 181,
+      "finalSyncWallSeconds": 0.0006684590000000002,
+      "ingestWallSeconds": 0.022245169000000002,
+      "iterations": 30,
+      "process": {
+        "cpuSeconds": 0.026383000000000018,
+        "elapsedSeconds": 0.025917708,
+        "interruptWakeups": 0,
+        "interruptWakeupsPerSecond": 0,
+        "involuntaryContextSwitches": 699,
+        "meanCPUPercentOneCore": 101.7952667728181,
+        "notes": [
+          "Synthetic fixture pipeline; no collection, UI rendering or live process metadata.",
+          "Elapsed time uses ContinuousClock. CPU and context switches are interval getrusage(RUSAGE_SELF) deltas. Peak RSS is a process-lifetime maximum, including startup and warmup. Wakeups are separate own-process libproc interrupt and package-idle counter deltas; neither is a total of all wakeups. Unavailable or regressed counters are unknown."
+        ],
+        "packageIdleWakeups": 0,
+        "packageIdleWakeupsPerSecond": 0,
+        "peakResidentBytes": 38699008,
+        "voluntaryContextSwitches": 9
+      },
+      "retention": "week",
+      "visibleHistory": false
+    },
+    {
+      "duplicatePresentationSync": false,
+      "expiryWallSeconds": 0.0012822500000000004,
+      "finalRawSamples": 181,
+      "finalSyncWallSeconds": 0.000599542,
+      "ingestWallSeconds": 0.020547584,
+      "iterations": 30,
+      "process": {
+        "cpuSeconds": 0.02366600000000002,
+        "elapsedSeconds": 0.023046,
+        "interruptWakeups": 0,
+        "interruptWakeupsPerSecond": 0,
+        "involuntaryContextSwitches": 449,
+        "meanCPUPercentOneCore": 102.69027163065184,
+        "notes": [
+          "Synthetic fixture pipeline; no collection, UI rendering or live process metadata.",
+          "Elapsed time uses ContinuousClock. CPU and context switches are interval getrusage(RUSAGE_SELF) deltas. Peak RSS is a process-lifetime maximum, including startup and warmup. Wakeups are separate own-process libproc interrupt and package-idle counter deltas; neither is a total of all wakeups. Unavailable or regressed counters are unknown."
+        ],
+        "packageIdleWakeups": 0,
+        "packageIdleWakeupsPerSecond": 0,
+        "peakResidentBytes": 39763968,
+        "voluntaryContextSwitches": 9
+      },
+      "retention": "week",
+      "visibleHistory": false
+    },
+    {
+      "duplicatePresentationSync": true,
+      "expiryWallSeconds": 0.0018727089999999997,
+      "finalRawSamples": 181,
+      "finalSyncWallSeconds": 0.0008636639999999999,
+      "ingestWallSeconds": 0.018735791999999998,
+      "iterations": 30,
+      "process": {
+        "cpuSeconds": 0.023004999999999998,
+        "elapsedSeconds": 0.022128708,
+        "interruptWakeups": 0,
+        "interruptWakeupsPerSecond": 0,
+        "involuntaryContextSwitches": 541,
+        "meanCPUPercentOneCore": 103.95997814242024,
+        "notes": [
+          "Synthetic fixture pipeline; no collection, UI rendering or live process metadata.",
+          "Elapsed time uses ContinuousClock. CPU and context switches are interval getrusage(RUSAGE_SELF) deltas. Peak RSS is a process-lifetime maximum, including startup and warmup. Wakeups are separate own-process libproc interrupt and package-idle counter deltas; neither is a total of all wakeups. Unavailable or regressed counters are unknown."
+        ],
+        "packageIdleWakeups": 0,
+        "packageIdleWakeupsPerSecond": 0,
+        "peakResidentBytes": 40517632,
+        "voluntaryContextSwitches": 9
+      },
+      "retention": "week",
+      "visibleHistory": true
+    },
+    {
+      "duplicatePresentationSync": false,
+      "expiryWallSeconds": 0.0013946690000000005,
+      "finalRawSamples": 181,
+      "finalSyncWallSeconds": 0.000905206,
+      "ingestWallSeconds": 0.018419295,
+      "iterations": 30,
+      "process": {
+        "cpuSeconds": 0.021814,
+        "elapsedSeconds": 0.021350959,
+        "interruptWakeups": 0,
+        "interruptWakeupsPerSecond": 0,
+        "involuntaryContextSwitches": 417,
+        "meanCPUPercentOneCore": 102.16871289013294,
+        "notes": [
+          "Synthetic fixture pipeline; no collection, UI rendering or live process metadata.",
+          "Elapsed time uses ContinuousClock. CPU and context switches are interval getrusage(RUSAGE_SELF) deltas. Peak RSS is a process-lifetime maximum, including startup and warmup. Wakeups are separate own-process libproc interrupt and package-idle counter deltas; neither is a total of all wakeups. Unavailable or regressed counters are unknown."
+        ],
+        "packageIdleWakeups": 0,
+        "packageIdleWakeupsPerSecond": 0,
+        "peakResidentBytes": 40566784,
+        "voluntaryContextSwitches": 9
+      },
+      "retention": "week",
+      "visibleHistory": true
+    },
+    {
+      "duplicatePresentationSync": true,
+      "expiryWallSeconds": 0.09095554100000003,
+      "finalRawSamples": 181,
+      "finalSyncWallSeconds": 0.10088491999999999,
+      "ingestWallSeconds": 0.000679541,
+      "iterations": 30,
+      "process": {
+        "cpuSeconds": 0.19503000000000004,
+        "elapsedSeconds": 0.193166958,
+        "interruptWakeups": 0,
+        "interruptWakeupsPerSecond": 0,
+        "involuntaryContextSwitches": 977,
+        "meanCPUPercentOneCore": 100.96447240215898,
+        "notes": [
+          "Synthetic fixture pipeline; no collection, UI rendering or live process metadata.",
+          "Elapsed time uses ContinuousClock. CPU and context switches are interval getrusage(RUSAGE_SELF) deltas. Peak RSS is a process-lifetime maximum, including startup and warmup. Wakeups are separate own-process libproc interrupt and package-idle counter deltas; neither is a total of all wakeups. Unavailable or regressed counters are unknown."
+        ],
+        "packageIdleWakeups": 0,
+        "packageIdleWakeupsPerSecond": 0,
+        "peakResidentBytes": 40615936,
+        "voluntaryContextSwitches": 0
+      },
+      "retention": "off",
+      "visibleHistory": true
+    },
+    {
+      "duplicatePresentationSync": false,
+      "expiryWallSeconds": 0.001237622,
+      "finalRawSamples": 181,
+      "finalSyncWallSeconds": 0.095188837,
+      "ingestWallSeconds": 0.000627377,
+      "iterations": 30,
+      "process": {
+        "cpuSeconds": 0.09869499999999998,
+        "elapsedSeconds": 0.097641666,
+        "interruptWakeups": 0,
+        "interruptWakeupsPerSecond": 0,
+        "involuntaryContextSwitches": 634,
+        "meanCPUPercentOneCore": 101.07877512044907,
+        "notes": [
+          "Synthetic fixture pipeline; no collection, UI rendering or live process metadata.",
+          "Elapsed time uses ContinuousClock. CPU and context switches are interval getrusage(RUSAGE_SELF) deltas. Peak RSS is a process-lifetime maximum, including startup and warmup. Wakeups are separate own-process libproc interrupt and package-idle counter deltas; neither is a total of all wakeups. Unavailable or regressed counters are unknown."
+        ],
+        "packageIdleWakeups": 0,
+        "packageIdleWakeupsPerSecond": 0,
+        "peakResidentBytes": 40615936,
+        "voluntaryContextSwitches": 0
+      },
+      "retention": "off",
+      "visibleHistory": true
+    }
+  ],
+  "runnerExitRecordedAtUTC": "2026-10-02T21:11:44.713086+00:00"
+}

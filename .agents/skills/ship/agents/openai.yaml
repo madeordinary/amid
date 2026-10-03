@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ship"
+  short_description: "Run pre-merge checks"
+  default_prompt: "Use $ship to check whether this branch is ready to merge."

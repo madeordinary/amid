@@ -1,0 +1,80 @@
+{
+  "actualCiphertextBytes": 19483310,
+  "actualHourRecords": 3045,
+  "actualMinuteRecords": 30093,
+  "buildConfiguration": "release",
+  "checkpoints": [
+    {
+      "lifetimePeakResidentBytes": 30310400,
+      "measuredMemoryBytes": 6259480,
+      "measuredMemoryMethod": "footprint",
+      "phase": "before",
+      "residentBytes": 30294016
+    },
+    {
+      "lifetimePeakResidentBytes": 214581248,
+      "measuredMemoryBytes": 52003704,
+      "measuredMemoryMethod": "footprint",
+      "phase": "loaded",
+      "residentBytes": 144965632
+    },
+    {
+      "lifetimePeakResidentBytes": 214581248,
+      "measuredMemoryBytes": 77087608,
+      "measuredMemoryMethod": "footprint",
+      "phase": "state-retained",
+      "residentBytes": 170180608
+    },
+    {
+      "lifetimePeakResidentBytes": 214581248,
+      "measuredMemoryBytes": 77087608,
+      "measuredMemoryMethod": "footprint",
+      "phase": "state-released",
+      "residentBytes": 170180608
+    },
+    {
+      "lifetimePeakResidentBytes": 214581248,
+      "measuredMemoryBytes": 92193680,
+      "measuredMemoryMethod": "footprint",
+      "phase": "flushed",
+      "residentBytes": 185286656
+    }
+  ],
+  "fixture": {
+    "anchor": 812683500,
+    "ciphertextBytes": 19498535,
+    "days": 7,
+    "entities": 21,
+    "hourlyBuckets": 144,
+    "minuteBuckets": 1440,
+    "records": 33264
+  },
+  "invocation": "AMID_RETAINED_PROFILE=load AMID_RETAINED_DIRECTORY=/private/tmp/amid-owned-retained-profile-21-week-whole-pool-20261002 AMID_RETAINED_DAYS=7 AMID_RETAINED_ENTITIES=21 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun xctest -XCTest AmidCoreTests.RetainedHistoryMemoryProfileTests/testOptInRetainedHistoryMemory /tmp/amid-groups-build/arm64-apple-macosx/release/AmidPackageTests.xctest",
+  "measurementHelperRevision": "self libproc footprint and Mach RSS, before numeric-only TASK_VM_INFO revision",
+  "notes": [
+    "Generator and loader must be separate fresh release test processes. Fixed public synthetic test key; no Keychain, host metadata, UI, heap or stack dump.",
+    "1440 minute buckets plus older hourly buckets generated directly as encrypted version3 fixtures. Production load performs real retention/rollup/persist; wall-clock boundary advancement may reduce or merge oldest buckets. No five-second ingestion or raw ring is simulated.",
+    "21entities means20apps+system;76 means65apps+10projects+system. Names are bounded synthetic strings; entity churn and real metadata lengths are not represented.",
+    "165000record/128MiB ciphertext fixture bound and250MiB production disk cap are not RSS bounds. Lifetime peak includes test startup, but generator allocations are excluded from a fresh loader process.",
+    "Checkpoint RSS is public self Mach task_info; measured memory uses self public libproc footprint with labeled RSS fallback. State uses copy-on-write; releasing a state need not immediately release allocator pages. Actual runner exit must be recorded separately."
+  ],
+  "observedRunnerExitCode": 0,
+  "process": {
+    "cpuSeconds": 1.040903,
+    "elapsedSeconds": 1.231328208,
+    "interruptWakeups": 11,
+    "interruptWakeupsPerSecond": 8.933442707259086,
+    "involuntaryContextSwitches": 164,
+    "meanCPUPercentOneCore": 84.53497558467366,
+    "notes": [
+      "Synthetic retained-history fixture only; not a GUI performance gate.",
+      "Elapsed time uses ContinuousClock. CPU and context switches are interval getrusage(RUSAGE_SELF) deltas. Peak RSS is a process-lifetime maximum, including startup and warmup. Wakeups are separate own-process libproc interrupt and package-idle counter deltas; neither is a total of all wakeups. Unavailable or regressed counters are unknown."
+    ],
+    "packageIdleWakeups": 0,
+    "packageIdleWakeupsPerSecond": 0,
+    "peakResidentBytes": 214581248,
+    "voluntaryContextSwitches": 3404
+  },
+  "role": "load",
+  "sourceVariant": "whole-load autoreleasepool"
+}

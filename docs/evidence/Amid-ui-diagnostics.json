@@ -1,0 +1,28 @@
+{
+  "activeAlertCategories" : [
+
+  ],
+  "aliases" : [
+
+  ],
+  "application" : "Amid",
+  "coverage" : "available",
+  "historyStorageMiB" : 0,
+  "inaccessibleProcessCount" : 0,
+  "logicalCPUCount" : 15,
+  "memoryPressure" : "unknown",
+  "observedProcessCount" : 2,
+  "omitted" : [
+    "arguments",
+    "environment",
+    "usernames",
+    "project paths",
+    "process identities",
+    "remote endpoints",
+    "payloads"
+  ],
+  "operatingSystem" : "Version 27.0.1 (Build 26A434)",
+  "retention" : "7 days",
+  "systemCPUPercentRounded" : 17,
+  "version" : "0.1.0"
+}

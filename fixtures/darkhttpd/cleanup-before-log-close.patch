@@ -1,0 +1,19 @@
+--- a/darkhttpd.c
++++ b/darkhttpd.c
+@@ -3099,7 +3099,6 @@
+ 
+     /* clean exit */
+     xclose(sockin);
+-    if (logfile != NULL) fclose(logfile);
+     if (pidfile_name) pidfile_remove();
+ 
+     /* close and free connections */
+@@ -3145,6 +3144,8 @@
+         printf("Bytes: %llu in, %llu out\n", llu(total_in), llu(total_out));
+     }
+ 
++    if (logfile != NULL) fclose(logfile);
++
+     return 0;
+ }
+ 

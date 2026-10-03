@@ -1,0 +1,4 @@
+module CAmid {
+    umbrella "."
+    export *
+}
