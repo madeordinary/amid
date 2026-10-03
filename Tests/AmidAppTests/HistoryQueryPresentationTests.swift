@@ -173,4 +173,122 @@ final class HistoryQueryPresentationTests: XCTestCase {
         XCTAssertEqual(model.retainedHistoryNames, ["system": "System"])
     }
 
+    @MainActor
+    func testOrdinaryHistorySelectionPreservesNamesButPrivacyTransitionsClearThem() {
+        let model = model()
+        let names = ["system": "System", "app:exited": "Exited fixture"]
+        model.retainedHistoryNames = names
+        model.historyEntity = "app:exited"
+        XCTAssertEqual(model.retainedHistoryNames, names)
+        model.historyHours = 1
+        XCTAssertEqual(model.retainedHistoryNames, names)
+        model.destination = .settings
+        model.destination = .history
+        XCTAssertEqual(model.retainedHistoryNames, names)
+        model.fullWindowVisible = false
+        XCTAssertEqual(model.retainedHistoryNames, ["system": "System"])
+        XCTAssertFalse(model.historyQueryPending)
+        model.fullWindowVisible = true
+        model.retainedHistoryNames = names
+        model.settings.excludedApplications.insert("exited")
+        XCTAssertEqual(model.retainedHistoryNames, ["system": "System"])
+        XCTAssertFalse(model.inspectorHistoryPending)
+    }
+
+    @MainActor
+    func testDelayedHistoryReplyIsPendingUntilCompletedEmptyOrError() async {
+        for fails in [false, true] {
+            let model = model()
+            await model.receiveHistoryQuery(entityID: "system", inspector: false, revision: 4) { entity, since, until in
+                XCTAssertTrue(model.historyQueryPending)
+                XCTAssertTrue(model.aggregates.isEmpty)
+                XCTAssertNil(model.historyQueryError)
+                await Task.yield()
+                XCTAssertTrue(model.historyQueryPending)
+                return HistoryQuery(entityID: entity, since: since, until: until, points: [], revision: 4, error: fails ? "unavailable" : nil)
+            }
+            XCTAssertFalse(model.historyQueryPending)
+            XCTAssertTrue(model.aggregates.isEmpty)
+            XCTAssertEqual(model.historyQueryError != nil, fails)
+        }
+    }
+
+    @MainActor
+    func testStaleReplyCannotCompleteNewerPendingRequest() async {
+        let model = model()
+        var oldReply: CheckedContinuation<HistoryQuery?, Never>?
+        var newReply: CheckedContinuation<HistoryQuery?, Never>?
+        var oldQuery: HistoryQuery?
+        var newQuery: HistoryQuery?
+        let oldTask = Task {
+            await model.receiveHistoryQuery(entityID: "system", inspector: false, revision: 4) { entity, since, until in
+                oldQuery = HistoryQuery(entityID: entity, since: since, until: until, points: [], revision: 4, error: "old error")
+                return await withCheckedContinuation { oldReply = $0 }
+            }
+        }
+        let firstDeadline = ContinuousClock.now.advanced(by: .seconds(5))
+        while oldReply == nil && ContinuousClock.now < firstDeadline { await Task.yield() }
+        XCTAssertNotNil(oldReply)
+        let newTask = Task {
+            await model.receiveHistoryQuery(entityID: "system", inspector: false, revision: 4) { entity, since, until in
+                newQuery = HistoryQuery(entityID: entity, since: since, until: until, points: [], revision: 4, error: nil)
+                return await withCheckedContinuation { newReply = $0 }
+            }
+        }
+        let secondDeadline = ContinuousClock.now.advanced(by: .seconds(5))
+        while newReply == nil && ContinuousClock.now < secondDeadline { await Task.yield() }
+        XCTAssertNotNil(newReply)
+        oldReply?.resume(returning: oldQuery)
+        await oldTask.value
+        XCTAssertTrue(model.historyQueryPending)
+        XCTAssertNil(model.historyQueryError)
+        newReply?.resume(returning: newQuery)
+        await newTask.value
+        XCTAssertFalse(model.historyQueryPending)
+        XCTAssertNil(model.historyQueryError)
+    }
+
+    @MainActor
+    func testHideAndSettingsClearPendingRepliesAndNamesImmediately() async {
+        for hide in [true, false] {
+            let model = model()
+            model.retainedHistoryNames["app:private"] = "Private fixture"
+            await model.receiveHistoryQuery(entityID: "system", inspector: false, revision: 4) { entity, since, until in
+                XCTAssertTrue(model.historyQueryPending)
+                if hide { model.fullWindowVisible = false }
+                else { model.settings.excludedApplications.insert("private") }
+                XCTAssertFalse(model.historyQueryPending)
+                XCTAssertEqual(model.retainedHistoryNames, ["system": "System"])
+                return HistoryQuery(entityID: entity, since: since, until: until, points: [], revision: 4, error: "stale")
+            }
+            XCTAssertFalse(model.historyQueryPending)
+            XCTAssertNil(model.historyQueryError)
+        }
+    }
+
+    @MainActor
+    func testOffRecentHistoryCompletesLoadingAfterShow() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("amid-history-off-loading-\(UUID())")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = HistoryStore(directory: directory, keyProvider: EphemeralHistoryKeyProvider())
+        await store.updateSettings(.init(retention: .off))
+        let model = AppModel(store: store)
+        model.settings.retention = .off
+        model.destination = .history
+        model.fullWindowVisible = true
+        await model.refreshHistoryPresentation()
+        let deadline = ContinuousClock.now.advanced(by: .seconds(5))
+        while model.historyQueryPending && ContinuousClock.now < deadline { await Task.yield() }
+        XCTAssertFalse(model.historyQueryPending)
+        XCTAssertTrue(model.recentHistoryPoints.isEmpty)
+        XCTAssertNil(model.historyQueryError)
+        model.destination = .applications
+        model.selectedGroupID = "missing"
+        await model.refreshHistoryPresentation()
+        let inspectorDeadline = ContinuousClock.now.advanced(by: .seconds(5))
+        while model.inspectorHistoryPending && ContinuousClock.now < inspectorDeadline { await Task.yield() }
+        XCTAssertFalse(model.inspectorHistoryPending)
+        XCTAssertTrue(model.inspectorHistoryPoints.isEmpty)
+    }
+
 }

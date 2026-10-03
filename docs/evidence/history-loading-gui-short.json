@@ -1,0 +1,67 @@
+{
+  "candidate": {
+    "bundle": "build/AmidHistoryLoading.app",
+    "executableSHA256": "9961bb664f15276868d06400a8f2c45452b1d5782e697ab9fee08a632cf409df",
+    "ownedQuitExit": 0,
+    "sourceFingerprint": "74a21d4d5a19106979b580491778ef2ed766274aaa8db37f45b59ad593625ddb"
+  },
+  "measurement": {
+    "cpuSeconds": 0.7609910000000002,
+    "elapsedSeconds": 188.208399375,
+    "interruptWakeups": 65,
+    "interruptWakeupsPerSecond": 0.34536184472027365,
+    "involuntaryContextSwitches": 2554,
+    "meanCPUPercentOneCore": 0.40433423934696283,
+    "notes": [
+      "Full GUI with accessible process metadata; 30-second warmup. Temporary encrypted storage obeys monitoring.retention.",
+      "Elapsed time uses ContinuousClock. CPU and context switches are interval getrusage(RUSAGE_SELF) deltas. Peak RSS is a process-lifetime maximum, including startup and warmup. Wakeups are separate own-process libproc interrupt and package-idle counter deltas; neither is a total of all wakeups. Unavailable or regressed counters are unknown."
+    ],
+    "packageIdleWakeups": 4,
+    "packageIdleWakeupsPerSecond": 0.021253036598170686,
+    "peakResidentBytes": 111181824,
+    "voluntaryContextSwitches": 430
+  },
+  "monitoring": {
+    "acceptedSamples": 18,
+    "createdAt": "2026-10-03T23:40:30Z",
+    "elapsedSeconds": 188.208424417,
+    "historySeed": {
+      "actualLoadedAggregates": 119244,
+      "measurementNote": "Synthetic import/startup allocations are included in process-lifetime peak RSS. Import precedes warmup and the measured CPU interval; this is loaded synthetic history, not a normal-store load benchmark.",
+      "provenance": {
+        "anchor": "2026-10-03T23:25:00Z",
+        "ciphertextBytes": 70783703,
+        "ciphertextSHA256": "018464c4e8e707fc93e7536ffdd856c31129aeac784935c865e4932458e1f1ec",
+        "days": 7,
+        "declaredRecords": 120384,
+        "entities": 76,
+        "manifestSHA256": "8869d020871b90d78341412d1e3842ebfc7f3d5c75178cab74df90172b82b8b6",
+        "note": "Disposable synthetic fixture re-encrypted with a fresh ephemeral destination key. Import hashes source ciphertext and authenticates/reseals every blob; production load validates aggregate payloads and performs normal maintenance. Declared counts are provenance, not postload counts. Import overhead is not normal-store load overhead."
+      }
+    },
+    "invalidReasons": [],
+    "lastRequestedCadence": 10,
+    "lastSampleElapsed": 178.010685542,
+    "maximumGapSeconds": 10.654202124999998,
+    "maximumRequestedCadence": 10,
+    "measurementStartedAt": "2026-10-03T23:41:02Z",
+    "minimumRequestedCadence": 10,
+    "observedProcessesAtCompletion": 652,
+    "phase": "completed",
+    "presentationMode": "normal",
+    "requestedSeconds": 180,
+    "retention": "week",
+    "runID": "6164441E-64D9-47D5-B5C2-7402896E8728",
+    "statusUpdatedAt": "2026-10-03T23:44:10Z",
+    "unavailableSamples": 0,
+    "warmupSamples": 3
+  },
+  "notes": [
+    "Only monitoring.phase=completed describes a continuous sampling run; this is not a reference-hardware or baseline pass.",
+    "Peak RSS includes startup and warmup. Wakeup counters are separate public own-process counters.",
+    "Status heartbeat writes occur at most once per minute and are included in measured cost.",
+    "Requested cadence was ten seconds in observed battery mode; not the default-five-second protocol.",
+    "No build/fixture/profiler ran concurrently; lightweight documentation/tool activity remained on the host. No matched no-Amid baseline or reference M1 hardware was available.",
+    "The current source, executable and synthetic seed are identified. Different workloads and shorter duration prohibit causal comparison with historical runs."
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "sourceCommit": "239eb7aaa42af1ea1243baf626fb46f3d23bed04",
+  "fixtureSource": "fixtures/native/history-spike.c",
+  "fixtureSourceSHA256": "55c0d04561ab4e3f58acf8b214d2af4191207c63a61e57bc083d0afbf3997e27",
+  "script": "scripts/run-history-spike.sh",
+  "exit": 0,
+  "phases": [
+    {
+      "phase": "baseline-start",
+      "utcSeconds": 1791068497.208842,
+      "elapsedSeconds": 4e-06,
+      "ownCPUSeconds": 0.00251,
+      "phaseCPUSeconds": 0.00251,
+      "mappedBytes": 0,
+      "lifetimePeakRSSBytes": 1769472
+    },
+    {
+      "phase": "baseline-complete",
+      "utcSeconds": 1791068557.209517,
+      "elapsedSeconds": 60.000684,
+      "ownCPUSeconds": 0.002609,
+      "phaseCPUSeconds": 9.9e-05,
+      "mappedBytes": 0,
+      "lifetimePeakRSSBytes": 1769472
+    },
+    {
+      "phase": "burst-start",
+      "utcSeconds": 1791068557.216284,
+      "elapsedSeconds": 60.007449,
+      "ownCPUSeconds": 0.009251,
+      "phaseCPUSeconds": 0.006642,
+      "mappedBytes": 67108864,
+      "lifetimePeakRSSBytes": 68009984
+    },
+    {
+      "phase": "burst-complete",
+      "utcSeconds": 1791068617.20885,
+      "elapsedSeconds": 120.000017,
+      "ownCPUSeconds": 59.900613,
+      "phaseCPUSeconds": 59.891362,
+      "mappedBytes": 67108864,
+      "lifetimePeakRSSBytes": 68042752
+    },
+    {
+      "phase": "cooldown-start",
+      "utcSeconds": 1791068617.211418,
+      "elapsedSeconds": 120.002579,
+      "ownCPUSeconds": 59.901064,
+      "phaseCPUSeconds": 0.000451,
+      "mappedBytes": 0,
+      "lifetimePeakRSSBytes": 68042752
+    },
+    {
+      "phase": "complete",
+      "utcSeconds": 1791068677.210441,
+      "elapsedSeconds": 180.001607,
+      "ownCPUSeconds": 59.901096,
+      "phaseCPUSeconds": 3.2e-05,
+      "mappedBytes": 0,
+      "lifetimePeakRSSBytes": 68042752
+    }
+  ],
+  "notes": [
+    "Only the fixture's own numeric counters; no monitored process data.",
+    "Native observations are recorded separately and are rounded UI values, not exact equality with these counters.",
+    "Fixture runtime was180.001607seconds; CPU burst59.891362seconds own CPU; memory allocation67108864bytes. No sustained Amid overhead budget inference."
+  ]
+}

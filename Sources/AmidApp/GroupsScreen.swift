@@ -126,7 +126,8 @@ struct GroupHistorySummary: View {
                 }
                 Spacer()
             }
-            if let queryError = model.inspectorHistoryError { Text(verbatim: queryError).foregroundStyle(.secondary) }
+            if model.inspectorHistoryPending && points.isEmpty { ProgressView("Loading history…").font(.caption) }
+            else if let queryError = model.inspectorHistoryError { Text(verbatim: queryError).foregroundStyle(.secondary) }
             else if points.isEmpty {
                 Text("No measurements in this interval. Processes below are current observations.")
                     .font(.caption).foregroundStyle(.secondary)

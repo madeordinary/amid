@@ -72,6 +72,11 @@ public enum VerificationHistorySeed {
         }
         guard fsync(fd) == 0 else { throw Failure.io }
     }
+    private static func reseal(_ encrypted: Data, using destinationKey: SymmetricKey) throws -> Data {
+        guard encrypted.prefix(4) == Data("AMID".utf8) else { throw Failure.invalidFixture }
+        let clear = try AES.GCM.open(AES.GCM.SealedBox(combined: encrypted.dropFirst(4)), using: fixtureKey, authenticating: Data("AMID".utf8))
+        return Data("AMID".utf8) + (try AES.GCM.seal(clear, using: destinationKey, authenticating: Data("AMID".utf8)).combined!)
+    }
     private static func hash(_ data: Data) -> String { SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() }
     public static func importStore(from source: URL, to destination: URL, expectedManifestSHA256: String, verificationMode: Bool, now: Date = Date()) throws -> Imported {
         guard verificationMode else { throw Failure.invalidMode }
@@ -115,21 +120,23 @@ public enum VerificationHistorySeed {
             close(output)
             if !complete { unlinkat(parent, targetName, AT_REMOVEDIR) }
         }
+        let destinationKey = SymmetricKey(size: .bits256)
         var total = encrypted.count; var digest = SHA256(); digest.update(data: encrypted)
         for name in manifest.segmentFiles.sorted() {
             let data = try read(input, name, limit: 2 * 1024 * 1024)
             guard data.prefix(4) == Data("AMID".utf8), data.count <= maximumBytes - total else { throw Failure.invalidFixture }
             total += data.count; digest.update(data: data)
-            created.append(name); try write(output, name, data: data)
+            let rekeyed = try autoreleasepool { try reseal(data, using: destinationKey) }
+            created.append(name); try write(output, name, data: rekeyed)
         }
         guard total == descriptor.ciphertextBytes else { throw Failure.invalidFixture }
-        created.append("history.aesgcm"); try write(output, "history.aesgcm", data: encrypted)
+        created.append("history.aesgcm"); try write(output, "history.aesgcm", data: reseal(encrypted, using: destinationKey))
         guard fsync(output) == 0, fsync(parent) == 0 else { throw Failure.io }
         complete = true
         let summary = Summary(days: descriptor.days, entities: descriptor.entities, declaredRecords: descriptor.records,
             ciphertextBytes: total, anchor: descriptor.anchor, manifestSHA256: expectedManifestSHA256,
             ciphertextSHA256: digest.finalize().map { String(format: "%02x", $0) }.joined(),
-            note: "Disposable fixed-public-key synthetic fixture. Import hashes/authenticates manifest and bounds/copies ciphertext; production load authenticates and decodes segments once. Declared counts are provenance, not postload counts. Import overhead is not normal-store load overhead.")
-        return Imported(store: HistoryStore(directory: destination, keyProvider: EphemeralHistoryKeyProvider(key: fixtureKey)), summary: summary)
+            note: "Disposable synthetic fixture re-encrypted with a fresh ephemeral destination key. Import hashes source ciphertext and authenticates/reseals every blob; production load validates aggregate payloads and performs normal maintenance. Declared counts are provenance, not postload counts. Import overhead is not normal-store load overhead.")
+        return Imported(store: HistoryStore(directory: destination, keyProvider: EphemeralHistoryKeyProvider(key: destinationKey)), summary: summary)
     }
 }

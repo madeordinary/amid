@@ -76,6 +76,30 @@ final class VerificationHistorySeedTests: XCTestCase, @unchecked Sendable {
             XCTAssertFalse(FileManager.default.fileExists(atPath: output.path))
         }
     }
+    func testImportedAndSubsequentSyntheticActivityRejectPublicFixtureKey() async throws {
+        let input = source(); let output = target()
+        defer { try? FileManager.default.removeItem(at: input); try? FileManager.default.removeItem(at: output) }
+        let digest = try fixture(input, populated: true)
+        let sourceFiles = try FileManager.default.contentsOfDirectory(at: input, includingPropertiesForKeys: nil).filter { $0.pathExtension == "aesgcm" }
+        let originals = try Dictionary(uniqueKeysWithValues: sourceFiles.map { ($0.lastPathComponent, try Data(contentsOf: $0)) })
+        let imported = try VerificationHistorySeed.importStore(from: input, to: output, expectedManifestSHA256: digest, verificationMode: true)
+        let segment = try XCTUnwrap(sourceFiles.first { $0.lastPathComponent.hasPrefix("bucket-") })
+        for name in ["history.aesgcm", segment.lastPathComponent] {
+            let data = try Data(contentsOf: output.appendingPathComponent(name))
+            XCTAssertThrowsError(try AES.GCM.open(AES.GCM.SealedBox(combined: data.dropFirst(4)), using: key, authenticating: Data("AMID".utf8)))
+        }
+        await imported.store.load()
+        let initialMetadata = await imported.store.metadata(); XCTAssertNil(initialMetadata.error)
+        await imported.store.ingest(Snapshot(timestamp: Date(), availability: .available))
+        await imported.store.flush()
+        let finalMetadata = await imported.store.metadata(); XCTAssertNil(finalMetadata.error)
+        let written = try FileManager.default.contentsOfDirectory(at: output, includingPropertiesForKeys: nil).filter { $0.pathExtension == "aesgcm" }
+        for file in written {
+            let data = try Data(contentsOf: file)
+            XCTAssertThrowsError(try AES.GCM.open(AES.GCM.SealedBox(combined: data.dropFirst(4)), using: key, authenticating: Data("AMID".utf8)))
+        }
+        for (name, bytes) in originals { XCTAssertEqual(try Data(contentsOf: input.appendingPathComponent(name)), bytes) }
+    }
     func testValidCiphertextImportLoadsOnceAndTamperedSegmentFailsClosed() async throws {
         let input = source(); let output = target(); let tamperedOutput = target()
         defer { for url in [input, output, tamperedOutput] where FileManager.default.fileExists(atPath: url.path) { try? FileManager.default.removeItem(at: url) } }
@@ -90,9 +114,8 @@ final class VerificationHistorySeedTests: XCTestCase, @unchecked Sendable {
         XCTAssertEqual(permissions?.intValue, 0o600)
         let files = try FileManager.default.contentsOfDirectory(at: input, includingPropertiesForKeys: nil).filter { $0.lastPathComponent.hasPrefix("bucket-") }.sorted { $0.lastPathComponent < $1.lastPathComponent }
         let last = try XCTUnwrap(files.last); var data = try Data(contentsOf: last); data[data.count-1] ^= 1; try data.write(to: last)
-        let bad = try VerificationHistorySeed.importStore(from: input, to: tamperedOutput, expectedManifestSHA256: digest, verificationMode: true)
-        await bad.store.load(); let failed = await bad.store.state()
-        XCTAssertNotNil(failed.error); XCTAssertTrue(failed.aggregates.isEmpty)
-        XCTAssertEqual(try Data(contentsOf: input.appendingPathComponent("history.aesgcm")), try Data(contentsOf: tamperedOutput.appendingPathComponent("history.aesgcm")))
+        XCTAssertThrowsError(try VerificationHistorySeed.importStore(from: input, to: tamperedOutput, expectedManifestSHA256: digest, verificationMode: true))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: tamperedOutput.path))
+        XCTAssertEqual(hash(try Data(contentsOf: input.appendingPathComponent("history.aesgcm"))), digest)
     }
 }

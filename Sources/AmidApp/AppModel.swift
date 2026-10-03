@@ -17,7 +17,7 @@ final class AppModel {
     var settings = HistorySettings() {
         didSet {
             settingsRevision += 1
-            if settings.retention != oldValue.retention || settings.excludedApplications != oldValue.excludedApplications || settings.excludedProjects != oldValue.excludedProjects { invalidateHistoryPresentation() }
+            if settings.retention != oldValue.retention || settings.excludedApplications != oldValue.excludedApplications || settings.excludedProjects != oldValue.excludedProjects { invalidateHistoryPresentation(); markHistoryPresentationPending() }
         }
     }
     // Only the selected retained entity/range; never a full archive copy.
@@ -27,6 +27,8 @@ final class AppModel {
     var inspectorHistoryEntity: String?
     var historyQueryError: String?
     var inspectorHistoryError: String?
+    private(set) var historyQueryPending = false
+    private(set) var inspectorHistoryPending = false
     private var historyPresentationEpoch = 0
     private var historyRequestRevision = 0
     private var inspectorRequestRevision = 0
@@ -59,7 +61,7 @@ final class AppModel {
         didSet {
             if fullWindowVisible != oldValue {
                 invalidateHistoryPresentation()
-                if fullWindowVisible { updateOverviewPresentation(); Task { await refreshHistoryPresentation() } }
+                if fullWindowVisible { updateOverviewPresentation(); markHistoryPresentationPending(); Task { await refreshHistoryPresentation() } }
             }
         }
     }
@@ -348,18 +350,30 @@ final class AppModel {
     private func configureAlerts() async {
         await alerts.updateSettings(AlertSettings(enabledRules: Set(settings.alertEnabledRules.compactMap(AlertCategory.init(rawValue:))), excludedApplications: settings.excludedApplications, diskThresholdBytes: settings.diskThresholdBytes))
     }
-    private func invalidateHistoryPresentation() {
+    private func invalidateHistoryPresentation(preserveNames: Bool = false) {
         historyPresentationEpoch += 1
         aggregates = []; inspectorHistoryPoints = []; inspectorHistoryEntity = nil
-        retainedHistoryNames = ["system": "System"]
-        recentHistoryPoints = []; recentHistoryNames = ["system": "System"]
+        if !preserveNames { retainedHistoryNames = ["system": "System"]; recentHistoryNames = ["system": "System"] }
+        recentHistoryPoints = []
         historyQueryError = nil; inspectorHistoryError = nil
+        historyQueryPending = false; inspectorHistoryPending = false
         let store = store
         Task { await store?.clearQueryCache() }
     }
     private func historySelectionChanged() {
-        invalidateHistoryPresentation()
+        invalidateHistoryPresentation(preserveNames: historyPresentationAllowed)
+        markHistoryPresentationPending()
         Task { await refreshHistoryPresentation() }
+    }
+    private func markHistoryPresentationPending() {
+        guard store != nil, historyPresentationAllowed, settings.retention != nil else { return }
+        if destination == .history { historyQueryPending = true }
+        else if selectedInspectorEntity != nil { inspectorHistoryPending = true }
+    }
+    private func historyPresentationUnavailable() {
+        historyQueryPending = false; inspectorHistoryPending = false
+        if destination == .history { historyQueryError = localized("History measurements unavailable") }
+        else if selectedInspectorEntity != nil { inspectorHistoryError = localized("History measurements unavailable") }
     }
     private var historyPresentationAllowed: Bool {
         fullWindowVisible && !locked && !sleeping && !clearingHistory && !quitting
@@ -375,6 +389,7 @@ final class AppModel {
     private func syncStore(importSettingsAt revision: Int? = nil) async {
         guard !clearingHistory, !quitting else { return }
         let activeGeneration = generation
+        markHistoryPresentationPending()
         guard let state = await store?.metadata() else { return }
         guard activeGeneration == generation, !clearingHistory, !quitting else { return }
         if let revision, settingsRevision == revision { settings = state.settings }
@@ -394,12 +409,12 @@ final class AppModel {
                 guard activeGeneration == generation, epoch == historyPresentationEpoch, settingsToken == settingsRevision,
                       historyPresentationAllowed, destination == .history, historyEntity == entity else { return }
                 if entity != "system" && names[entity] == nil { historyEntity = "system"; return }
-                recentHistoryNames = names; recentHistoryPoints = points
+                recentHistoryNames = names; recentHistoryPoints = points; historyQueryPending = false
             }
             if let entity = selectedInspectorEntity { await refreshInspectorHistoryPresentation(for: entity) }
             return
         }
-        guard state.error == nil else { invalidateHistoryPresentation(); return }
+        guard state.error == nil else { invalidateHistoryPresentation(); historyPresentationUnavailable(); return }
         if destination == .history {
             let entities = await store?.entities() ?? []
             guard activeGeneration == generation, epoch == historyPresentationEpoch, settingsToken == settingsRevision,
@@ -425,12 +440,15 @@ final class AppModel {
         let hours = historyHours, selectedDestination = destination
         if inspector { inspectorRequestRevision += 1 } else { historyRequestRevision += 1 }
         let request = inspector ? inspectorRequestRevision : historyRequestRevision
+        if inspector { inspectorHistoryPending = true; inspectorHistoryError = nil }
+        else { historyQueryPending = true; historyQueryError = nil }
         let until = Date(), since = until.addingTimeInterval(-hours * 3600)
         let query = await fetch(entityID, since, until)
         guard activeGeneration == generation, epoch == historyPresentationEpoch, settingsToken == settingsRevision,
               historyPresentationAllowed, historyHours == hours, destination == selectedDestination,
               request == (inspector ? inspectorRequestRevision : historyRequestRevision),
               inspector ? selectedInspectorEntity == entityID : historyEntity == entityID else { return }
+        if inspector { inspectorHistoryPending = false } else { historyQueryPending = false }
         guard let query, query.entityID == entityID, query.since == since, query.until == until,
               query.revision == revision, query.error == nil else {
             if inspector { inspectorHistoryPoints = []; inspectorHistoryEntity = entityID; inspectorHistoryError = localized("History measurements unavailable") }
@@ -444,10 +462,11 @@ final class AppModel {
         guard historyPresentationAllowed, selectedInspectorEntity == entity else { return }
         if settings.retention != .off { await syncStore(); return }
         let activeGeneration = generation, epoch = historyPresentationEpoch, settingsToken = settingsRevision
+        inspectorHistoryPending = true; inspectorHistoryError = nil
         let points = await recentHistory(for: entity)
         guard activeGeneration == generation, epoch == historyPresentationEpoch, settingsToken == settingsRevision,
               historyPresentationAllowed, settings.retention == .off, selectedInspectorEntity == entity else { return }
-        inspectorHistoryEntity = entity; inspectorHistoryPoints = points
+        inspectorHistoryEntity = entity; inspectorHistoryPoints = points; inspectorHistoryPending = false
     }
     func refreshHistoryPresentation() async { await syncStore() }
     func expireMemoryHistory(now: Date = Date()) async {

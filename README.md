@@ -2,7 +2,7 @@
 
 Amid is a native, offline Mac activity monitor for applications, development projects and listening TCP ports. It requires Apple silicon and targets macOS 15 or later. Local development builds have run on macOS 27.0.1. Owned native checks cover history clearing/recovery and confirmed supported-server stopping. An uninterrupted 30-minute full-GUI run completed but exceeded both CPU and memory budgets. Further native checks and diagnostic comparisons need the Mac awake and unlocked; minimum-OS compatibility and public-release gates remain unverified.
 
-Latest local development checkpoint: `build/AmidCandidate.app` is packaged and ad-hoc verified; it is not a public release. The [current manifest](docs/evidence/current-candidate-source.json) and [handoff](docs/handoff.md) record its test scope and open native/performance checks. The exact-count history-loader comparison lowered peak RSS to 138.375 MiB but increased memory remaining after load; see [retained-memory evidence](docs/evidence/retained-history-memory.md).
+Latest local development checkpoint: `build/AmidHistoryLoading.app` passed 180 release tests with nine opt-in profile skips and no failures, nine C reply cases, packaging and strict ad-hoc verification. [Candidate evidence](docs/evidence/history-loading-candidate.md) and [exact manifest](docs/evidence/history-loading-candidate-source.json) record its native synthetic-history selection checks and limits. Earlier [paged core measurements](docs/evidence/paged-history-candidate.md) show lower 76/350-entity loaded memory; full-GUI CPU/RSS acceptance remains open. This is a local development candidate, not a public binary release.
 
 Source is published as a development preview under MIT. See [repository hygiene](docs/repository-hygiene.md) for tracked files and the clean public history boundary.
 
@@ -79,11 +79,13 @@ Diagnostics shows a frozen preview of the exact JSON before a local save. Defaul
 
 ## Evidence and release status
 
+The [latest short loaded-app run](docs/evidence/history-loading-gui-short.json) completed 188.208 seconds at 0.404334% of one CPU core and 106.031250 MiB lifetime peak RSS. This is a three-minute battery-mode check at a ten-second interval, not the required sustained five-second/reference-hardware pass.
+
 A successful build does not establish all PRD gates. The first CPU benchmark used incorrect Mach-tick units and remains invalid evidence. The optimized collector-only run measured 0.41994% of one core over 1,801 seconds with peak RSS 12,615,680 bytes; it does not establish full-app performance.
 
 The [completed uninterrupted full-GUI run](docs/evidence/gui-benchmark-checkpoint-completed.json) measured 1.559615% of one core and peak RSS 160.265625 MiB over 1,803.225 seconds, exceeding both budgets. A [later short candidate](docs/evidence/gui-profile-candidate-180.json) measured 1.193647% and 129.3125 MiB over 184.331 seconds. Different workloads and duration prevent treating it as a sustained pass or attributing the change to one optimization. Its [numeric phase report](docs/evidence/gui-profile-candidate-phases.json) separates current-thread ingestion work from concurrent whole-process cost.
 
-A separate [21-entity, seven-day retained-history loader](docs/evidence/retained-history-memory-21-week-load.json) reached about 207.89 MiB RSS without the GUI or raw ring. That memory issue remains under investigation. No passing sustained full-GUI result or matched reference-hardware baseline exists. The [handoff](docs/handoff.md) and [current manifest](docs/evidence/current-candidate-source.json) distinguish the latest source and diagnostic candidates from these preserved runs.
+A separate [21-entity, seven-day retained-history loader](docs/evidence/retained-history-memory-21-week-load.json) reached about 207.89 MiB RSS without the GUI or raw ring. That historical all-row loader has been replaced by authenticated bucket paging; [76/350-entity core results](docs/evidence/paged-history-candidate.md) are separate from full-GUI acceptance. No passing sustained full-GUI result or matched reference-hardware baseline exists. The [handoff](docs/handoff.md) and [latest manifest](docs/evidence/history-loading-candidate-source.json) distinguish current source from preserved failed runs.
 
 - [Short profiling candidate source and executable hashes](docs/evidence/gui-profile-candidate-source.json)
 - [Native acceptance observations](docs/evidence/acceptance-ui-observations.md)

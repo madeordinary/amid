@@ -811,3 +811,6 @@
 "%@ s" = "%@ s";
 "%@–%@ s" = "%@–%@ s";
 "Interrupted time is recorded at the next observation and may span earlier buckets. Empty periods remain gaps." = "Interrupted time is recorded at the next observation and may span earlier buckets. Empty periods remain gaps.";
+
+"Loading history…" = "Loading history…";
+"Selected resource" = "Selected resource";

@@ -12,6 +12,8 @@ struct HistoryScreen: View {
         var values = ["system": "System"]
         if model.settings.retention == .off { values.merge(model.recentHistoryNames) { _, new in new } }
         else { values.merge(model.retainedHistoryNames) { _, new in new } }
+        // After a privacy clear, retain the selected tag without retaining its former identifying label.
+        if values[model.historyEntity] == nil { values[model.historyEntity] = localized("Selected resource") }
         return values.map { ($0.key, $0.value) }.sorted { $0.1 < $1.1 }
     }
     var body: some View {
@@ -33,7 +35,8 @@ struct HistoryScreen: View {
                 Notice(title: localized("Saved history is off"), detail: localized("Live samples stay in a bounded 15-minute memory ring and are cleared on lock or quit. Choose retention in Settings to begin saving aggregates."))
             }
             if model.shortenedByCap { Notice(title: localized("Storage cap shortened this history"), detail: localized("Amid enforced its 250 MiB cap after retention and rollups. Older aggregates were removed.")) }
-            if let queryError = model.historyQueryError { Text(verbatim: queryError).foregroundStyle(.secondary) }
+            if model.historyQueryPending && points.isEmpty { ProgressView("Loading history…") }
+            else if let queryError = model.historyQueryError { Text(verbatim: queryError).foregroundStyle(.secondary) }
             else if points.isEmpty {
                 EmptyState(title: model.settings.retention == .off ? localized("No observations in the memory window") : localized("No saved measurements in this range"), detail: localized("History begins after your choice. Sleep, quit and missing samples are gaps; no earlier activity is reconstructed."), symbol: "clock.arrow.circlepath")
             } else {
