@@ -12,6 +12,12 @@ struct GUIBenchmarkEvidence: Encodable {
     static func presentationMode(arguments: [String]) -> PresentationMode {
         arguments.contains("--performance-verification") && arguments.contains("--profile-suppress-hidden-overview") ? .hiddenOverviewSuppressed : .normal
     }
+    struct HistorySeed: Encodable {
+        let provenance: VerificationHistorySeed.Summary
+        let actualLoadedAggregates: Int
+        let measurementNote = "Synthetic import/startup allocations are included in process-lifetime peak RSS. Import precedes warmup and the measured CPU interval; this is loaded synthetic history, not a normal-store load benchmark."
+    }
+    var historySeed: HistorySeed?
     var presentationMode: PresentationMode = .normal
     enum Phase: String, Codable { case warmingUp, measuring, completed, invalid }
     let runID = UUID()
@@ -88,10 +94,11 @@ final class GUIBenchmarkSession {
     private(set) var writeFailed = false
     private var finalized = false
 
-    init(seconds: Double, output: URL, retention: String, presentationMode: GUIBenchmarkEvidence.PresentationMode = .normal) {
+    init(seconds: Double, output: URL, retention: String, presentationMode: GUIBenchmarkEvidence.PresentationMode = .normal, historySeed: GUIBenchmarkEvidence.HistorySeed? = nil) {
         evidence = GUIBenchmarkEvidence(requestedSeconds: seconds)
         evidence.retention = retention
         evidence.presentationMode = presentationMode
+        evidence.historySeed = historySeed
         self.output = output
         writeStatus()
     }

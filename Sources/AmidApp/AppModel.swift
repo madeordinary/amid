@@ -24,6 +24,12 @@ final class AppModel {
     var shortenedByCap = false
     var error: String?
     var showOnboarding = false
+    var groupNavigationRevision = 0
+    func openGroup(_ id: String, projects: Bool) {
+        destination = projects ? .projects : .applications
+        selectedGroupID = id
+        groupNavigationRevision += 1
+    }
     var selectedGroupID: String?
     var selectedProcess: ProcessSample?
     var historyEntity = "system"
@@ -69,7 +75,10 @@ final class AppModel {
     var sleeping = false
     var locked: Bool { sessionInactive || screenLocked }
     var busy = false
-    let isVerification = CommandLine.arguments.contains("--verification") || CommandLine.arguments.contains("--performance-verification")
+    let isVerification: Bool
+    private let seedRequest: VerificationHistorySeedRequest
+    private var verificationStartupFailed = false
+    private var verificationSeedEvidence: GUIBenchmarkEvidence.HistorySeed?
     private let verificationOwnedServer = AppModel.verificationOwnedServerPath(arguments: CommandLine.arguments)
     nonisolated static func verificationOwnedServerPath(arguments: [String]) -> String? {
         guard let index = arguments.firstIndex(of: "--verification-owned-server"), arguments.indices.contains(index + 1) else { return nil }
@@ -81,7 +90,7 @@ final class AppModel {
             == URL(fileURLWithPath: expected).resolvingSymlinksInPath().path
     }
     var verificationColorScheme: ColorScheme? { isVerification && CommandLine.arguments.contains("--light-appearance") ? .light : nil }
-    private let isPerformanceVerification = CommandLine.arguments.contains("--performance-verification")
+    private let isPerformanceVerification: Bool
     private var benchmarkTask: Task<Void, Never>?
     private var benchmarkSession: GUIBenchmarkSession?
     private var pipelineProfile: AppPipelineProfile?
@@ -94,7 +103,18 @@ final class AppModel {
     private var observers: [NSObjectProtocol] = []
     private var dismissedAlertIDs: Set<UUID> = []
     private var lastRefresh: Date?
-    init(store: HistoryStore? = nil) { self.store = store }
+    init(store: HistoryStore? = nil, arguments: [String] = CommandLine.arguments) {
+        self.store = store
+        isVerification = arguments.contains("--verification") || arguments.contains("--performance-verification")
+        isPerformanceVerification = arguments.contains("--performance-verification")
+        seedRequest = VerificationHistorySeedRequest.parse(arguments: arguments)
+    }
+    private func failVerificationStartup() {
+        verificationStartupFailed = true
+        store = nil
+        showOnboarding = false
+        error = "Verification history seed was invalid or unavailable; startup stopped."
+    }
     var paused: Bool { settings.paused }
     private(set) var applications: [ResourceGroup] = []
     private(set) var projects: [ResourceGroup] = []
@@ -127,7 +147,20 @@ final class AppModel {
     func start() async {
         guard !started else { return }; started = true
         let directory: URL
-        if isVerification {
+        if case .invalid = seedRequest { failVerificationStartup(); return }
+        if case let .configured(source, hash) = seedRequest {
+            directory = URL(fileURLWithPath: "/private/tmp/amid-ui-verification-seeded-\(UUID().uuidString)", isDirectory: true)
+            do {
+                let imported = try await Task.detached {
+                    try VerificationHistorySeed.importStore(from: source, to: directory, expectedManifestSHA256: hash, verificationMode: true)
+                }.value
+                store = imported.store
+                await imported.store.load()
+                let loaded = await imported.store.state()
+                guard loaded.error == nil else { failVerificationStartup(); return }
+                verificationSeedEvidence = GUIBenchmarkEvidence.HistorySeed(provenance: imported.summary, actualLoadedAggregates: loaded.aggregates.count)
+            } catch { failVerificationStartup(); return }
+        } else if isVerification {
             directory = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("amid-ui-verification-\(ProcessInfo.processInfo.processIdentifier)")
             store = HistoryStore(directory: directory, keyProvider: EphemeralHistoryKeyProvider())
         } else {
@@ -135,7 +168,7 @@ final class AppModel {
             store = HistoryStore(directory: directory)
         }
         let loadingRevision = settingsRevision
-        await store?.load()
+        if verificationSeedEvidence == nil { await store?.load() }
         await syncStore(importSettingsAt: loadingRevision)
         showOnboarding = settings.retention == nil
         await configureAlerts()
@@ -159,6 +192,7 @@ final class AppModel {
         }
     }
     func refresh() async {
+        guard !verificationStartupFailed else { return }
         let expiryToken = pipelineProfile?.begin(.expiry)
         await expireMemoryHistory()
         await actions.expirePreviews()
@@ -247,7 +281,7 @@ final class AppModel {
               let seconds = Double(args[i + 1]), seconds.isFinite, seconds >= 30,
               let p = args.firstIndex(of: "--benchmark-output"), args.indices.contains(p + 1) else { return }
         let output = URL(fileURLWithPath: args[p + 1])
-        let session = GUIBenchmarkSession(seconds: seconds, output: output, retention: settings.retention?.rawValue ?? "unknown", presentationMode: benchmarkPresentationMode)
+        let session = GUIBenchmarkSession(seconds: seconds, output: output, retention: settings.retention?.rawValue ?? "unknown", presentationMode: benchmarkPresentationMode, historySeed: verificationSeedEvidence)
         benchmarkSession = session
         let profileOutputInvalid: Bool
         switch AppPipelineProfile.outputChoice(arguments:args,benchmarkOutput:output) {

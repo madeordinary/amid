@@ -80,6 +80,7 @@ struct MainWindow: View {
 
 struct OverviewScreen: View {
     @Bindable var model: AppModel
+    @State private var showSystemDetails = false
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
@@ -96,7 +97,7 @@ struct OverviewScreen: View {
                         SectionHeading(title: localized("Largest observed applications"), subtitle: localized("Memory accounting may differ between processes."))
                         ForEach(model.overviewPresentation.applications) { group in
                             Button {
-                                model.destination = .applications; model.selectedGroupID = group.id
+                                model.openGroup(group.id, projects: false)
                             } label: {
                                 HStack(spacing: 12) {
                                     Image(systemName: "app.fill").font(.title3).foregroundStyle(.teal)
@@ -119,7 +120,7 @@ struct OverviewScreen: View {
                         SectionHeading(title: localized("Projects & ports"), subtitle: localized("Connections made from observed metadata."))
                         ForEach(model.overviewPresentation.projects) { project in
                             Button {
-                                model.destination = .projects; model.selectedGroupID = project.id
+                                model.openGroup(project.id, projects: true)
                             } label: {
                                 HStack {
                                     Image(systemName: "folder").foregroundStyle(.teal)
@@ -134,7 +135,10 @@ struct OverviewScreen: View {
                             }.buttonStyle(.plain)
                         }
                         if model.overviewPresentation.projects.isEmpty { Text("No project roots observed. Hidden or inaccessible working directories remain unattributed.").foregroundStyle(.secondary).font(.callout) }
-                        Divider().padding(.vertical, 5)
+                    }.frame(maxWidth: .infinity)
+                }
+                DisclosureGroup("System details", isExpanded: $showSystemDetails) {
+                    VStack(alignment: .leading, spacing: 18) {
                         KeyValue(name: localized("Physical memory"), value: bytes(model.overviewPresentation.system.memory.physical))
                         KeyValue(name: localized("Compressed memory"), value: bytes(model.overviewPresentation.system.memory.compressed))
                         KeyValue(name: localized("Thermal state"), value: model.overviewPresentation.system.thermalState)
@@ -143,36 +147,36 @@ struct OverviewScreen: View {
                             KeyValue(name: localized("Battery"), value: "\(percent(battery.percent)) · \(battery.isCharging ? "Charging" : battery.onBattery ? "On battery" : "External power")")
                             KeyValue(name: localized("Battery health"), value: battery.condition)
                         }
-                    }.frame(maxWidth: .infinity)
-                }
-                SectionHeading(title: localized("Physical memory categories"), subtitle: localized("OS page categories can overlap with process accounting; these are not per-app totals."))
-                HStack(spacing: 22) {
-                    VStack(spacing: 10) {
-                        KeyValue(name: localized("Active"), value: bytes(model.overviewPresentation.system.memory.active))
-                        KeyValue(name: localized("Inactive"), value: bytes(model.overviewPresentation.system.memory.inactive))
-                    }
-                    VStack(spacing: 10) {
-                        KeyValue(name: localized("Wired"), value: bytes(model.overviewPresentation.system.memory.wired))
-                        KeyValue(name: localized("Free"), value: bytes(model.overviewPresentation.system.memory.free))
-                    }
-                }
-                SectionHeading(title: localized("Local volumes"), subtitle: localized("APFS volumes may share container capacity. These capacities are never summed."))
-                ForEach(model.overviewPresentation.system.volumes) { volume in
-                    HStack {
-                        Label(volume.name, systemImage: "internaldrive")
-                        Spacer()
-                        Text("\(bytes(volume.available)) available of \(bytes(volume.capacity))").monospacedDigit()
-                    }.font(.callout).accessibilityElement(children: .combine)
-                }
-                SectionHeading(title: localized("Network interfaces"), subtitle: localized("Interface byte deltas only. Virtual interfaces may overlap; these rates are not added together."))
-                ForEach(model.overviewPresentation.system.interfaces, id: \.id) { interface in
-                    HStack {
-                        Text(interface.id).font(.callout.monospaced())
-                        if interface.isVirtual { Text("Virtual / may overlap").font(.caption).foregroundStyle(.secondary) }
-                        Spacer()
-                        Text("↓ \(throughput(interface.receivedBytesPerSecond))    ↑ \(throughput(interface.sentBytesPerSecond))").font(.callout.monospacedDigit())
-                    }.accessibilityElement(children: .combine)
-                }
+                        SectionHeading(title: localized("Physical memory categories"), subtitle: localized("OS page categories can overlap with process accounting; these are not per-app totals."))
+                        HStack(spacing: 22) {
+                            VStack(spacing: 10) {
+                                KeyValue(name: localized("Active"), value: bytes(model.overviewPresentation.system.memory.active))
+                                KeyValue(name: localized("Inactive"), value: bytes(model.overviewPresentation.system.memory.inactive))
+                            }
+                            VStack(spacing: 10) {
+                                KeyValue(name: localized("Wired"), value: bytes(model.overviewPresentation.system.memory.wired))
+                                KeyValue(name: localized("Free"), value: bytes(model.overviewPresentation.system.memory.free))
+                            }
+                        }
+                        SectionHeading(title: localized("Local volumes"), subtitle: localized("APFS volumes may share container capacity. These capacities are never summed."))
+                        ForEach(model.overviewPresentation.system.volumes) { volume in
+                            HStack {
+                                Label(volume.name, systemImage: "internaldrive")
+                                Spacer()
+                                Text("\(bytes(volume.available)) available of \(bytes(volume.capacity))").monospacedDigit()
+                            }.font(.callout).accessibilityElement(children: .combine)
+                        }
+                        SectionHeading(title: localized("Network interfaces"), subtitle: localized("Interface byte deltas only. Virtual interfaces may overlap; these rates are not added together."))
+                        ForEach(model.overviewPresentation.system.interfaces, id: \.id) { interface in
+                            HStack {
+                                Text(interface.id).font(.callout.monospaced())
+                                if interface.isVirtual { Text("Virtual / may overlap").font(.caption).foregroundStyle(.secondary) }
+                                Spacer()
+                                Text("↓ \(throughput(interface.receivedBytesPerSecond))    ↑ \(throughput(interface.sentBytesPerSecond))").font(.callout.monospacedDigit())
+                            }.accessibilityElement(children: .combine)
+                        }
+                    }.padding(.top, 12)
+                }.font(.callout)
                 Notice(title: localized("Coverage has a boundary"), detail: localized("Application and project totals are alternate views of the same observed processes. Shared memory and inaccessible processes mean their totals need not equal system memory. CPU is 100% per logical core; load is a separate count of runnable work."))
             }.padding(26)
         }

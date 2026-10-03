@@ -10,6 +10,7 @@
 
 ## Gotchas
 - libproc rusage and task-info CPU totals are Mach ticks on the tested Apple silicon host. Convert with mach_timebase_info; reference-test with getrusage timeval seconds.
+- Foundation can rewrite an existing /private/tmp fixture path to /tmp during standardization. Validate an exact owned temporary child lexically plus descriptor-based owner/type/no-follow checks; canonicalize both sides when comparing observed executable aliases.
 - Use per-command DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer and project-local module caches. Do not alter global toolchain selection.
 - An encrypted manifest commits generation membership. Sync directory metadata before deleting superseded generations; never import orphan bucket files.
 

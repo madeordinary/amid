@@ -1,0 +1,261 @@
+{
+  "actualCiphertextBytes": 70783894,
+  "actualHourRecords": 11020,
+  "actualMinuteRecords": 109364,
+  "checkpoints": [
+    {
+      "lifetimePeakResidentBytes": 30343168,
+      "measuredMemoryBytes": 6259480,
+      "measuredMemoryMethod": "Mach physical footprint",
+      "phase": "before",
+      "residentBytes": 30343168
+    },
+    {
+      "lifetimePeakResidentBytes": 427753472,
+      "measuredMemoryBytes": 382157976,
+      "measuredMemoryMethod": "Mach physical footprint",
+      "phase": "loaded",
+      "residentBytes": 427753472
+    },
+    {
+      "lifetimePeakResidentBytes": 427769856,
+      "measuredMemoryBytes": 382157976,
+      "measuredMemoryMethod": "Mach physical footprint",
+      "phase": "state-retained",
+      "residentBytes": 427769856
+    },
+    {
+      "lifetimePeakResidentBytes": 427769856,
+      "measuredMemoryBytes": 382157976,
+      "measuredMemoryMethod": "Mach physical footprint",
+      "phase": "state-released",
+      "residentBytes": 427769856
+    },
+    {
+      "lifetimePeakResidentBytes": 429588480,
+      "measuredMemoryBytes": 383976600,
+      "measuredMemoryMethod": "Mach physical footprint",
+      "phase": "flushed",
+      "residentBytes": 429588480
+    }
+  ],
+  "failures": 0,
+  "fixture": {
+    "anchor": 812754480,
+    "ciphertextBytes": 70783703,
+    "days": 7,
+    "entities": 76,
+    "hourlyBuckets": 144,
+    "minuteBuckets": 1440,
+    "records": 120384
+  },
+  "limitations": [
+    "Synthetic fixed-public-key encrypted data and bounded names.",
+    "120384 actual aggregate records; loader may roll up boundary records and replace affected ciphertext.",
+    "RSS includes test process and lifetime startup; it is distinct from physical footprint.",
+    "Peak 411.375 MiB exceeds 150 MiB without the GUI; no full application pass."
+  ],
+  "observedExitCode": 0,
+  "process": {
+    "cpuSeconds": 1.368336,
+    "elapsedSeconds": 1.616835708,
+    "interruptWakeups": 15,
+    "interruptWakeupsPerSecond": 9.277380457260412,
+    "involuntaryContextSwitches": 161,
+    "meanCPUPercentOneCore": 84.63049110243921,
+    "notes": [
+      "Synthetic retained-history fixture only; not a GUI performance gate.",
+      "Elapsed time uses ContinuousClock. CPU and context switches are interval getrusage(RUSAGE_SELF) deltas. Peak RSS is a process-lifetime maximum, including startup and warmup. Wakeups are separate own-process libproc interrupt and package-idle counter deltas; neither is a total of all wakeups. Unavailable or regressed counters are unknown."
+    ],
+    "packageIdleWakeups": 0,
+    "packageIdleWakeupsPerSecond": 0,
+    "peakResidentBytes": 431357952,
+    "voluntaryContextSwitches": 1589
+  },
+  "rawEvidenceSHA256": "4b52d4e06b157fa71b7e3c3d0c9b0a7c3f92e3877ec5f5ce7d24e3f57c4ad89d",
+  "scope": "Fresh release core loader; no GUI, live raw ring, Keychain or reference hardware. Correctness passed; memory budget failed.",
+  "sourceHistoryStoreSHA256": "8cf82dfca889167098f97520963f900577289b32ca3365edd1ee8d98839de9ba",
+  "stages": [
+    {
+      "aggregateCount": 120384,
+      "encodedSegmentCount": 0,
+      "memory": {
+        "lifetimePeakResidentBytes": 188121088,
+        "measuredMemoryBytes": 163611512,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "decoded",
+        "residentBytes": 188121088
+      },
+      "stage": "decoded"
+    },
+    {
+      "aggregateCount": 120384,
+      "encodedSegmentCount": 0,
+      "memory": {
+        "lifetimePeakResidentBytes": 207962112,
+        "measuredMemoryBytes": 108004240,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "validated",
+        "residentBytes": 153485312
+      },
+      "stage": "validated"
+    },
+    {
+      "aggregateCount": 120384,
+      "encodedSegmentCount": 0,
+      "memory": {
+        "lifetimePeakResidentBytes": 207962112,
+        "measuredMemoryBytes": 108004240,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "assigned",
+        "residentBytes": 153485312
+      },
+      "stage": "assigned"
+    },
+    {
+      "aggregateCount": 120384,
+      "encodedSegmentCount": 0,
+      "memory": {
+        "lifetimePeakResidentBytes": 207962112,
+        "measuredMemoryBytes": 158139328,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "decodeReturned",
+        "residentBytes": 203587584
+      },
+      "stage": "decodeReturned"
+    },
+    {
+      "aggregateCount": 120384,
+      "encodedSegmentCount": 0,
+      "memory": {
+        "lifetimePeakResidentBytes": 374915072,
+        "measuredMemoryBytes": 329417808,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "enforced",
+        "residentBytes": 374915072
+      },
+      "stage": "enforced"
+    },
+    {
+      "aggregateCount": 120384,
+      "encodedSegmentCount": 0,
+      "memory": {
+        "lifetimePeakResidentBytes": 374915072,
+        "measuredMemoryBytes": 329417808,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "enforceReturned",
+        "residentBytes": 374915072
+      },
+      "stage": "enforceReturned"
+    },
+    {
+      "aggregateCount": 120384,
+      "encodedSegmentCount": 0,
+      "memory": {
+        "lifetimePeakResidentBytes": 424460288,
+        "measuredMemoryBytes": 378995840,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "grouped",
+        "residentBytes": 424460288
+      },
+      "stage": "grouped"
+    },
+    {
+      "aggregateCount": 120384,
+      "encodedSegmentCount": 1,
+      "memory": {
+        "lifetimePeakResidentBytes": 424902656,
+        "measuredMemoryBytes": 379438208,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "encoded",
+        "residentBytes": 424902656
+      },
+      "stage": "encoded"
+    },
+    {
+      "aggregateCount": 120384,
+      "encodedSegmentCount": 1,
+      "memory": {
+        "lifetimePeakResidentBytes": 427720704,
+        "measuredMemoryBytes": 382125208,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "written",
+        "residentBytes": 427720704
+      },
+      "stage": "written"
+    },
+    {
+      "aggregateCount": 120384,
+      "encodedSegmentCount": 1,
+      "memory": {
+        "lifetimePeakResidentBytes": 427753472,
+        "measuredMemoryBytes": 382157976,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "indexReady",
+        "residentBytes": 427753472
+      },
+      "stage": "indexReady"
+    },
+    {
+      "aggregateCount": 120384,
+      "encodedSegmentCount": 0,
+      "memory": {
+        "lifetimePeakResidentBytes": 427753472,
+        "measuredMemoryBytes": 382157976,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "loadReturned",
+        "residentBytes": 427753472
+      },
+      "stage": "loadReturned"
+    },
+    {
+      "aggregateCount": 120384,
+      "encodedSegmentCount": 0,
+      "memory": {
+        "lifetimePeakResidentBytes": 429457408,
+        "measuredMemoryBytes": 383845528,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "grouped",
+        "residentBytes": 429457408
+      },
+      "stage": "grouped"
+    },
+    {
+      "aggregateCount": 120384,
+      "encodedSegmentCount": 0,
+      "memory": {
+        "lifetimePeakResidentBytes": 429457408,
+        "measuredMemoryBytes": 383845528,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "encoded",
+        "residentBytes": 429457408
+      },
+      "stage": "encoded"
+    },
+    {
+      "aggregateCount": 120384,
+      "encodedSegmentCount": 0,
+      "memory": {
+        "lifetimePeakResidentBytes": 429588480,
+        "measuredMemoryBytes": 383976600,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "written",
+        "residentBytes": 429588480
+      },
+      "stage": "written"
+    },
+    {
+      "aggregateCount": 120384,
+      "encodedSegmentCount": 0,
+      "memory": {
+        "lifetimePeakResidentBytes": 429588480,
+        "measuredMemoryBytes": 383976600,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "indexReady",
+        "residentBytes": 429588480
+      },
+      "stage": "indexReady"
+    }
+  ],
+  "tests": 1
+}

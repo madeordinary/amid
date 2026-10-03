@@ -42,21 +42,22 @@ public actor HistoryStore {
     private func loadWithinPool() {
         guard FileManager.default.fileExists(atPath:file.path) else { return }
         do {
-            try autoreleasepool { try decodeAndAssignArchive() }
+            let loadKey = try autoreleasepool { try decodeAndAssignArchive() }
             memoryObserver?(.decodeReturned, aggregates.count, 0)
             autoreleasepool {
                 enforce(now:loadReferenceDate ?? Date())
                 memoryObserver?(.enforced, aggregates.count, 0)
             }
             memoryObserver?(.enforceReturned, aggregates.count, 0)
-            try autoreleasepool { try persist() }
+            try autoreleasepool { try persist(using: loadKey) }
         } catch { failure = "Encrypted history unavailable. Unlock Keychain or clear the app-owned store to recover. No plaintext fallback." }
     }
-    private func decodeAndAssignArchive() throws {
+    private func decodeAndAssignArchive() throws -> SymmetricKey {
         try validateDirectory()
         let encrypted = try Data(contentsOf:file)
         guard encrypted.prefix(4) == Data("AMID".utf8) else { throw HistoryStorageError.invalidEnvelope }
-        let clear = try AES.GCM.open(AES.GCM.SealedBox(combined:encrypted.dropFirst(4)),using:keyProvider.existingKey(),authenticating:Data("AMID".utf8))
+        let loadKey = try keyProvider.existingKey()
+        let clear = try AES.GCM.open(AES.GCM.SealedBox(combined:encrypted.dropFirst(4)),using:loadKey,authenticating:Data("AMID".utf8))
         let archive = try JSONDecoder().decode(Archive.self,from:clear)
         guard (1...3).contains(archive.version) else { throw HistoryStorageError.unsupportedVersion(archive.version) }
         var loaded = archive.aggregates
@@ -69,7 +70,7 @@ public actor HistoryStore {
                 let url = directory.appendingPathComponent(name)
                 try validateRegular(url)
                 let data = try Data(contentsOf:url)
-                let decoded = try decrypt(data,using:keyProvider.existingKey())
+                let decoded = try decrypt(data,using:loadKey)
                 let bucket = try JSONDecoder().decode([HistoryAggregate].self,from:decoded)
                 guard let first = bucket.first, bucket.allSatisfy({ segmentName($0) == segmentName(first) }), loadedPaths[segmentName(first)] == nil else { throw HistoryStorageError.invalidEnvelope }
                 loaded += bucket
@@ -85,6 +86,7 @@ public actor HistoryStore {
         for value in aggregates where value.requiresPersistenceMigration || excluded(value.entityID) { dirtySegments.insert(segmentName(value)) }
         aggregates.removeAll { excluded($0.entityID) }
         alerts = archive.alerts; actions = archive.actions; shortened = archive.shortenedByCap; bytes = encrypted.count; failure = nil
+        return loadKey
     }
     public func state() -> HistoryState { HistoryState(settings:settings,aggregates:aggregates,alerts:alerts,actions:actions,recentSnapshots:recent,storageBytes:bytes,shortenedByCap:shortened,error:failure) }
     public func updateSettings(_ value: HistorySettings, now: Date = Date()) {
@@ -275,9 +277,10 @@ public actor HistoryStore {
         func negativeZero(_ value: Double) -> Bool { value == 0 && value.sign == .minus }
         return negativeZero(value.cpu.sum) || negativeZero(value.memory.sum) || negativeZero(value.load1.sum) || negativeZero(value.load5.sum) || negativeZero(value.load15.sum) || negativeZero(value.swap.sum) || negativeZero(value.observedSeconds) || negativeZero(value.gapSeconds) || negativeZero(value.cpuObservedSeconds) || negativeZero(value.memoryObservedSeconds)
     }
-    private func persist() throws {
+    private func persist(using loadKey: SymmetricKey? = nil) throws {
         try validateDirectory()
-        let key = try keyProvider.key()
+        let key: SymmetricKey
+        if let loadKey { key = loadKey } else { key = try keyProvider.key() }
         try FileManager.default.createDirectory(at:directory,withIntermediateDirectories:true,attributes:[.posixPermissions:0o700])
         try FileManager.default.setAttributes([.posixPermissions:0o700],ofItemAtPath:directory.path)
         var groups = Dictionary(grouping:aggregates,by:segmentName)

@@ -25,7 +25,21 @@ struct GroupsScreen: View {
                     TableColumn(projects ? "Project" : "Application") { group in
                         HStack(spacing: 8) {
                             Image(systemName: projects ? "folder" : "app").foregroundStyle(.teal)
-                            Text(model.alias(group.id, fallback: group.name)).fontWeight(.medium)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(verbatim: model.alias(group.id, fallback: group.name)).fontWeight(.medium)
+                                if projects {
+                                    let ports = Array(Set(group.processes.flatMap(\.endpoints).map(\.port))).sorted()
+                                    if !ports.isEmpty {
+                                        Text(verbatim: "TCP " + ports.map(String.init).joined(separator: " · "))
+                                            .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                                            .padding(.horizontal, 6).padding(.vertical, 2)
+                                            .background(.quaternary, in: RoundedRectangle(cornerRadius: 4))
+                                    } else {
+                                        Text(group.processes.allSatisfy { $0.portAvailability == .available } ? "No observed listeners" : "Listener coverage unavailable")
+                                            .font(.caption).foregroundStyle(.secondary)
+                                    }
+                                }
+                            }
                         }
                     }.width(min: 150, ideal: 240)
                     TableColumn("CPU · 100% = 1 core") { group in Text(percent(group.cpuPercent)).monospacedDigit() }.width(min: 140, ideal: 150)
@@ -42,6 +56,7 @@ struct GroupsScreen: View {
             Text("Application and project views overlap; do not add their totals. Unknown activity is excluded from observed totals.")
                 .font(.caption).foregroundStyle(.secondary)
         }.padding(24)
+            .onChange(of: model.groupNavigationRevision) { _, _ in search = "" }
     }
 }
 

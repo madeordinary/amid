@@ -5,6 +5,7 @@ import AmidCore
 struct MenuPanel: View {
     @Bindable var model: AppModel
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.dismiss) private var dismiss
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
@@ -21,7 +22,22 @@ struct MenuPanel: View {
                 KeyValue(name: localized("Startup available"), value: bytes(model.snapshot.system.volumes.first(where: \.isStartup)?.available))
                 Divider()
                 Text("TOP OBSERVED MEMORY").font(.system(size: 9, weight: .semibold)).tracking(1).foregroundStyle(.secondary)
-                ForEach(model.applications.prefix(3)) { group in KeyValue(name: model.alias(group.id, fallback: group.name), value: bytes(group.memoryBytes)) }
+                ForEach(model.applications.prefix(3)) { group in
+                    Button {
+                        model.openGroup(group.id, projects: false)
+                        openWindow(id: "main")
+                        NSApplication.shared.activate(ignoringOtherApps: true)
+                        dismiss()
+                    } label: {
+                        HStack {
+                            Text(verbatim: model.alias(group.id, fallback: group.name)).lineLimit(1)
+                            Spacer()
+                            Text(verbatim: bytes(group.memoryBytes)).monospacedDigit()
+                            Image(systemName: "chevron.right").font(.caption2).foregroundStyle(.secondary).accessibilityHidden(true)
+                        }.font(.callout).padding(.vertical, 4).contentShape(Rectangle())
+                    }.buttonStyle(.plain).help("Open application details")
+                        .accessibilityHint("Open application details")
+                }
                 Divider()
                 Text(verbatim: localizedFormat("%@ · %@ · %@",
                     localizedFormat("%ld projects", model.projects.count),
