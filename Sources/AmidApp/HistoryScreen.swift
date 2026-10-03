@@ -6,20 +6,19 @@ struct HistoryScreen: View {
     @Bindable var model: AppModel
     private var points: [HistoryAggregate] {
         if model.settings.retention == .off { return model.recentHistoryPoints }
-        let cutoff = Date().addingTimeInterval(-model.historyHours * 3600)
-        return model.aggregates.filter { $0.entityID == model.historyEntity && $0.start >= cutoff }.sorted { $0.start < $1.start }
+        return model.aggregates
     }
     private var entities: [(String, String)] {
         var values = ["system": "System"]
         if model.settings.retention == .off { values.merge(model.recentHistoryNames) { _, new in new } }
-        else { for point in model.aggregates { values[point.entityID] = point.name } }
+        else { values.merge(model.retainedHistoryNames) { _, new in new } }
         return values.map { ($0.key, $0.value) }.sorted { $0.1 < $1.1 }
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             HStack {
                 Picker("Resource", selection: $model.historyEntity) {
-                    ForEach(entities, id: \.0) { item in Text(item.1).tag(item.0) }
+                    ForEach(entities, id: \.0) { item in Text(verbatim: model.historyDisplayName(entityID: item.0, fallback: item.1)).tag(item.0) }
                 }.frame(maxWidth: 300)
                 Spacer()
                 if model.settings.retention == .off {
@@ -34,7 +33,8 @@ struct HistoryScreen: View {
                 Notice(title: localized("Saved history is off"), detail: localized("Live samples stay in a bounded 15-minute memory ring and are cleared on lock or quit. Choose retention in Settings to begin saving aggregates."))
             }
             if model.shortenedByCap { Notice(title: localized("Storage cap shortened this history"), detail: localized("Amid enforced its 250 MiB cap after retention and rollups. Older aggregates were removed.")) }
-            if points.isEmpty {
+            if let queryError = model.historyQueryError { Text(verbatim: queryError).foregroundStyle(.secondary) }
+            else if points.isEmpty {
                 EmptyState(title: model.settings.retention == .off ? localized("No observations in the memory window") : localized("No saved measurements in this range"), detail: localized("History begins after your choice. Sleep, quit and missing samples are gaps; no earlier activity is reconstructed."), symbol: "clock.arrow.circlepath")
             } else {
                 SectionHeading(title: localized("CPU over time"), subtitle: model.settings.retention == .off ? localized("Each mark is one observation from the memory window. Missing intervals remain gaps.") : localized("Each mark represents a measured bucket. Height shows its average; whiskers retain the recorded range."))
@@ -66,7 +66,6 @@ struct HistoryScreen: View {
                 }.frame(minHeight: 180, maxHeight: .infinity)
             }
         }.padding(24)
-            .task(id: model.historyEntity) { await model.refreshHistoryPresentation() }
     }
 }
 

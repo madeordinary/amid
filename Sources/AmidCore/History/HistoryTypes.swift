@@ -132,3 +132,27 @@ extension HistoryAggregate {
         }
     }
 }
+
+/// Lightweight production state. Full archive materialization belongs to diagnostic state().
+public struct HistoryMetadata: Sendable {
+    public var settings: HistorySettings
+    public var alerts: [AlertEvent]
+    public var actions: [ActionRecord]
+    public var aggregateCount: Int
+    public var storageBytes: Int
+    public var shortenedByCap: Bool
+    public var error: String?
+    public var revision: UInt64
+}
+public struct HistoryEntity: Sendable, Equatable, Identifiable {
+    public var id: String
+    public var name: String
+}
+public struct HistoryQuery: Sendable {
+    public var entityID: String
+    public var since: Date
+    public var until: Date
+    public var points: [HistoryAggregate]
+    public var revision: UInt64
+    public var error: String?
+}

@@ -3,7 +3,8 @@ import Foundation
 /// Explicit numeric-only attribution. Coarse CPU and fine wall stages are separate views.
 public final class SamplerProfile {
     public enum Coarse: String, Codable { case enumeration, processLoop, stringReuse, systemCounters, volumes, interfaces, power }
-    public enum Fine: String, Codable { case processOS, attribution, portsValidation, construction }
+    public enum Fine: String, Codable { case processOS, attribution, decoding, application, project, portsValidation, construction }
+    public enum Counter: String, Codable { case cwdCacheHit, cwdCacheMiss, markerCacheHit, markerCacheMiss, markerAccess }
     public struct CPUStage: Codable, Sendable {
         public var calls = 0
         public var cpuSeconds: Double? = 0
@@ -22,6 +23,7 @@ public final class SamplerProfile {
         public var incompleteCoarse: String?
         public var incompleteIteration: Bool
         public var notes: [String]
+        public var counters: [String: Int]? = nil
     }
     struct Reading { var wall: Double; var cpu: Double? }
     private let readCPU: () -> Reading
@@ -32,7 +34,9 @@ public final class SamplerProfile {
     private var fineStart: Double?
     private var coarse: [String: CPUStage] = [:]
     private var fine: [String: WallStage] = [:]
+    private var counters: [String: Int] = [:]
     private var finalized = false
+    public func count(_ counter: Counter) { guard !finalized else { return }; counters[counter.rawValue, default: 0] += 1 }
     public convenience init(measurement: OwnCurrentThreadMeasurement) {
         let origin = ContinuousClock.now
         self.init(readCPU: {
@@ -93,10 +97,11 @@ public final class SamplerProfile {
             incompleteIteration: fineStart != nil,
             notes: ["Verification-only numeric sampler attribution; no process metadata.",
                     "Coarse stages use cumulative own-current-thread CPU differences from one owned Mach port. They exclude other threads and dispatched work; timer quantization applies. Reused boundaries include intervening recorder, bookkeeping and setup work.",
-                    "Fine attribution includes marker-existence filesystem queries and is not pure Swift CPU work.",
+                    "Fine attribution phases split decoding with identity/CPU bookkeeping, application/runtime derivation and project-marker work; all are wall time, not CPU. Historical attribution is retained as a decoding-compatible enum case.",
+                    "Counters contain only numeric CWD-cache, marker-cache and marker-access counts; no paths or identities. Missing historical counters decode as unavailable.",
                     "Fine stages contain aggregate monotonic WALL time and counts only, not CPU. They are inside processLoop; never add them to coarse CPU or whole-process sums.",
                     "Boundary reads and accumulator work are included in measurement cost; no overhead subtraction or whole-app budget claim.",
-                    "Missing, nonfinite and regressed readings remain unknown. Incomplete stages are explicit; no fabricated zero completion."])
+                    "Missing, nonfinite and regressed readings remain unknown. Incomplete stages are explicit; no fabricated zero completion."], counters: counters)
         finalized = true; finalReport = report
         return report
     }

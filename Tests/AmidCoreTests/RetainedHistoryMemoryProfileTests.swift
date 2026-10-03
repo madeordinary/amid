@@ -71,10 +71,11 @@ final class RetainedHistoryMemoryProfileTests: XCTestCase, @unchecked Sendable {
         Data("AMID".utf8) + (try AES.GCM.seal(JSONEncoder().encode(value), using: fixtureKey,
             authenticating: Data("AMID".utf8)).combined!)
     }
-    private func entity(_ index: Int) -> (String, String) {
+    private func entity(_ index: Int, count: Int) -> (String, String) {
+        let applicationCount = count == 21 ? 20 : count - 11
         if index == 0 { return ("system", "System") }
-        if index <= 65 { return ("app:owned.synthetic.application.\(index)", "Owned Synthetic Application \(index)") }
-        return ("project:/private/tmp/owned-synthetic-retained-history/workspace-\(index-65)", "Owned Synthetic Workspace \(index-65)")
+        if index <= applicationCount { return ("app:owned.synthetic.application.\(index)", "Owned Synthetic Application \(index)") }
+        return ("project:/private/tmp/owned-synthetic-retained-history/workspace-\(index-applicationCount)", "Owned Synthetic Workspace \(index-applicationCount)")
     }
     func testMachReplyFieldCoverageRejectsShortAndImpossibleCounts() throws {
         let fields: [(Int, Int)] = [
@@ -114,14 +115,16 @@ final class RetainedHistoryMemoryProfileTests: XCTestCase, @unchecked Sendable {
         var checkpoints = [checkpoint("before")]
         let recorder = StageRecorder()
         var actualMinuteRecords = 0, actualHourRecords = 0, actualBytes = 0
+        var firstQuerySeconds: Double?, warmQuerySeconds: Double?
+        var queryPointCount: Int?
         let fixture: Fixture
         if role == "generate" {
             let days = Int(env["AMID_RETAINED_DAYS"] ?? "7") ?? 0
             let entities = Int(env["AMID_RETAINED_ENTITIES"] ?? "21") ?? 0
-            guard [7, 30].contains(days), [21, 76].contains(entities) else { XCTFail("Bounded fixture choices only"); return }
+            guard [7, 30].contains(days), [21, 76, 350].contains(entities) else { XCTFail("Bounded fixture choices only"); return }
             let hours = (days - 1) * 24
             let records = (1440 + hours) * entities
-            XCTAssertLessThanOrEqual(records, 165_000)
+            XCTAssertLessThanOrEqual(records, 750_000)
             guard !FileManager.default.fileExists(atPath: path) else { XCTFail("Generator requires a new owned directory"); return }
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])
             let anchor = Date(timeIntervalSince1970: floor(Date().timeIntervalSince1970 / 60) * 60)
@@ -133,7 +136,7 @@ final class RetainedHistoryMemoryProfileTests: XCTestCase, @unchecked Sendable {
                 let start = hourly ? Date(timeIntervalSince1970: hourlyEnd - Double(hours-index) * 3600) : anchor.addingTimeInterval(Double(index-hours-1440) * 60)
                 var values: [HistoryAggregate] = []
                 for e in 0..<entities {
-                    let (id, name) = entity(e)
+                    let (id, name) = entity(e, count: entities)
                     var value = HistoryAggregate(entityID: id, name: name, start: start, resolution: resolution)
                     value.samples = Int(resolution / 5); value.observedSeconds = resolution
                     value.cpuObservedSeconds = resolution; value.memoryObservedSeconds = resolution
@@ -143,13 +146,13 @@ final class RetainedHistoryMemoryProfileTests: XCTestCase, @unchecked Sendable {
                     values.append(value)
                 }
                 let data = try encrypted(values)
-                guard bytes + data.count <= 128 * 1024 * 1024 else { XCTFail("Fixture ciphertext bound exceeded"); return }
+                guard bytes + data.count <= 512 * 1024 * 1024 else { XCTFail("Fixture ciphertext bound exceeded"); return }
                 let file = "bucket-\(Int64(start.timeIntervalSince1970))-\(Int(resolution)).aesgcm"
                 try data.write(to: directory.appendingPathComponent(file), options: .atomic)
                 files.append(file); bytes += data.count
             }
             let manifest = try encrypted(Manifest(settings: .init(retention: days == 7 ? .week : .month), segmentFiles: files))
-            XCTAssertLessThanOrEqual(bytes + manifest.count, 128 * 1024 * 1024)
+            XCTAssertLessThanOrEqual(bytes + manifest.count, 512 * 1024 * 1024)
             try manifest.write(to: directory.appendingPathComponent("history.aesgcm"), options: .atomic)
             fixture = Fixture(days: days, entities: entities, minuteBuckets: 1440, hourlyBuckets: hours,
                 records: records, ciphertextBytes: bytes + manifest.count, anchor: anchor)
@@ -158,7 +161,7 @@ final class RetainedHistoryMemoryProfileTests: XCTestCase, @unchecked Sendable {
             checkpoints.append(checkpoint("generated"))
         } else {
             fixture = try JSONDecoder().decode(Fixture.self, from: Data(contentsOf: descriptor))
-            guard [7, 30].contains(fixture.days), [21, 76].contains(fixture.entities), fixture.records <= 165_000, fixture.ciphertextBytes <= 128 * 1024 * 1024 else { XCTFail("Fixture bounds invalid"); return }
+            guard [7, 30].contains(fixture.days), [21, 76, 350].contains(fixture.entities), fixture.records <= 750_000, fixture.ciphertextBytes <= 512 * 1024 * 1024 else { XCTFail("Fixture bounds invalid"); return }
             let store = HistoryStore(directory: directory, keyProvider: EphemeralHistoryKeyProvider(key: fixtureKey),
                 commitObserver: { _ in }, memoryObserver: { stage, count, encoded in
                     recorder.append(StagePoint(stage: stage.rawValue, aggregateCount: count, encodedSegmentCount: encoded,
@@ -166,27 +169,54 @@ final class RetainedHistoryMemoryProfileTests: XCTestCase, @unchecked Sendable {
                 }, loadReferenceDate: loadReferenceDate)
             await store.load()
             checkpoints.append(checkpoint("loaded"))
-            do {
-                let state = await store.state()
-                XCTAssertEqual(state.recentSnapshots.count, 0)
-                checkpoints.append(checkpoint("state-retained"))
-            }
-            checkpoints.append(checkpoint("state-released"))
+            let metadata = await store.metadata()
+            XCTAssertNil(metadata.error)
+            XCTAssertGreaterThan(metadata.aggregateCount, 0)
+            checkpoints.append(checkpoint("metadata"))
             await store.flush()
             checkpoints.append(checkpoint("flushed"))
+            let until = loadReferenceDate ?? Date()
+            let since = until.addingTimeInterval(-Double(fixture.days) * 86400)
+            do {
+                let started = ProcessInfo.processInfo.systemUptime
+                let selected = await store.history(entityID: "system", since: since, until: until)
+                firstQuerySeconds = ProcessInfo.processInfo.systemUptime - started
+                XCTAssertNil(selected.error)
+                XCTAssertFalse(selected.points.isEmpty)
+                XCTAssertTrue(selected.points.allSatisfy { $0.entityID == "system" && $0.start >= since && $0.start <= until })
+                queryPointCount = selected.points.count
+                checkpoints.append(checkpoint("selected-query"))
+                let warmStarted = ProcessInfo.processInfo.systemUptime
+                let repeated = await store.history(entityID: "system", since: since, until: until)
+                warmQuerySeconds = ProcessInfo.processInfo.systemUptime - warmStarted
+                let encoder = JSONEncoder(); encoder.outputFormatting = .sortedKeys
+                XCTAssertEqual(try encoder.encode(repeated.points), try encoder.encode(selected.points))
+                XCTAssertEqual(repeated.revision, selected.revision)
+                checkpoints.append(checkpoint("warm-query"))
+            }
+            await store.clearQueryCache()
+            checkpoints.append(checkpoint("query-cache-cleared"))
             // Validate after memory checkpoints; Set/ID construction can retain Foundation temporaries.
             do {
                 let state = await store.state()
+                checkpoints.append(checkpoint("diagnostic-state-materialized"))
                 XCTAssertNil(state.error)
-                XCTAssertFalse(state.shortenedByCap)
+                if fixture.entities != 350 { XCTAssertFalse(state.shortenedByCap) }
                 XCTAssertEqual(Set(state.aggregates.map(\.entityID)).count, fixture.entities)
                 XCTAssertTrue(state.recentSnapshots.isEmpty)
                 XCTAssertTrue(state.aggregates.allSatisfy { [60.0, 3600.0].contains($0.resolution) })
                 XCTAssertTrue(state.aggregates.allSatisfy { $0.start.addingTimeInterval($0.resolution) > (loadReferenceDate ?? Date()).addingTimeInterval(-Double(fixture.days) * 86400) })
                 actualMinuteRecords = state.aggregates.filter { $0.resolution == 60 }.count
                 actualHourRecords = state.aggregates.filter { $0.resolution == 3600 }.count
-                XCTAssertGreaterThan(actualMinuteRecords, 0); XCTAssertGreaterThan(actualHourRecords, 0)
+                XCTAssertGreaterThan(actualMinuteRecords, 0)
+                if fixture.entities != 350 || !state.shortenedByCap { XCTAssertGreaterThan(actualHourRecords, 0) }
+                if fixture.ciphertextBytes > 250 * 1024 * 1024 {
+                    XCTAssertTrue(state.shortenedByCap)
+                    XCTAssertLessThan(state.aggregates.count, fixture.records)
+                }
                 XCTAssertLessThanOrEqual(state.aggregates.count, fixture.records)
+                XCTAssertEqual(state.aggregates.count, metadata.aggregateCount)
+                XCTAssertEqual(state.aggregates.filter { $0.entityID == "system" && $0.start >= since && $0.start <= until }.count, queryPointCount)
                 actualBytes = state.storageBytes
                 XCTAssertLessThanOrEqual(actualBytes, 250 * 1024 * 1024)
                 let stages = recorder.values()
@@ -198,20 +228,21 @@ final class RetainedHistoryMemoryProfileTests: XCTestCase, @unchecked Sendable {
         }
         struct Evidence: Encodable {
             var role: String; var fixture: Fixture; var loadReferenceDate: Date?; var actualMinuteRecords: Int; var actualHourRecords: Int
+            var firstQuerySeconds: Double?; var warmQuerySeconds: Double?; var queryPointCount: Int?
             var actualCiphertextBytes: Int; var checkpoints: [Checkpoint]; var stages: [StagePoint]; var process: PerformanceMeasurement.Report
             var invocation: String; var notes: [String]
         }
         let evidence = Evidence(role: role, fixture: fixture, loadReferenceDate: loadReferenceDate, actualMinuteRecords: actualMinuteRecords,
-            actualHourRecords: actualHourRecords, actualCiphertextBytes: actualBytes, checkpoints: checkpoints, stages: recorder.values(),
+            actualHourRecords: actualHourRecords, firstQuerySeconds: firstQuerySeconds, warmQuerySeconds: warmQuerySeconds, queryPointCount: queryPointCount, actualCiphertextBytes: actualBytes, checkpoints: checkpoints, stages: recorder.values(),
             process: measurement.report(notes: ["Synthetic retained-history fixture only; not a GUI performance gate."]),
             invocation: (loadReferenceDate.map { "AMID_RETAINED_REFERENCE_DATE=\($0.timeIntervalSince1970) " } ?? "") + "AMID_RETAINED_PROFILE=\(role) AMID_RETAINED_DIRECTORY=\(path) AMID_RETAINED_DAYS=\(fixture.days) AMID_RETAINED_ENTITIES=\(fixture.entities) DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun xctest -XCTest AmidCoreTests.RetainedHistoryMemoryProfileTests/testOptInRetainedHistoryMemory " + Bundle(for: Self.self).bundleURL.path,
             notes: ["Generator and loader must be separate fresh release test processes. Fixed public synthetic test key; no Keychain, host metadata, UI, heap or stack dump.",
                 "Internal default-nil numeric stage callback enabled for this loader only. Whole-load/persist boundaries, no per-record callbacks. This source uses separate completed decode/enforce/persist scopes; decodeReturned/enforceReturned mark drainage before the next phase. indexReady means the index is valid; it may reuse the existing index instead of rebuilding when membership/order is unchanged. Checkpoints read only self Mach memory/getrusage; small recorder/counter overhead included. Numeric Mach replies require returned size to cover each requested field; older captured trials lacked this guard. Diagnostic GUI package frozen before this instrumentation excludes the callback.",
                 "Internal test-only loadReferenceDate pins the exact epoch for paired comparisons; public production initializer uses the actual clock. Timestamp must be within one hour of current test time.",
                 "1440 minute buckets plus older hourly buckets generated directly as encrypted version3 fixtures. Production load performs real retention/rollup/persist; wall-clock boundary advancement may reduce or merge oldest buckets. No five-second ingestion or raw ring is simulated.",
-                "21entities means20apps+system;76 means65apps+10projects+system. Names are bounded synthetic strings; entity churn and real metadata lengths are not represented.",
-                "165000record/128MiB ciphertext fixture bound and250MiB production disk cap are not RSS bounds. Lifetime peak includes test startup, but generator allocations are excluded from a fresh loader process.",
-                "Checkpoint RSS is public self Mach task_info; measured memory uses self public TASK_VM_INFO physical footprint (numeric-only helper revision). State uses copy-on-write; releasing a state need not immediately release allocator pages. Heavy fixture validation follows all memory checkpoints; process CPU interval includes validation. Actual runner exit must be recorded separately."])
+                "21entities means20apps+system;76 means65apps+10projects+system;350 means339apps+10projects+system. Names are bounded synthetic strings; entity churn and real metadata lengths are not represented.",
+                "750000record/512MiB ciphertext fixture bound and unchanged250MiB production disk cap are not RSS bounds. The350entity case may invoke real oldest-bucket cap eviction. Lifetime peak includes test startup, but generator allocations are excluded from a fresh loader process.",
+                "Checkpoint RSS is public self Mach task_info; measured memory uses self public TASK_VM_INFO physical footprint (numeric-only helper revision). Metadata/load/flush and selected-query checkpoints precede expensive diagnostic state materialization. The diagnostic-state checkpoint and whole-process peak include the full returned archive and validation; they are not production working-set measurements. Releasing values need not immediately release allocator pages. Process CPU interval includes validation. Actual runner exit must be recorded separately."])
         let encoder = JSONEncoder(); encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         try encoder.encode(evidence).write(to: output, options: .atomic)
     }

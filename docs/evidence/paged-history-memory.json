@@ -1,0 +1,219 @@
+{
+  "baseline76": {
+    "actualCiphertextBytes": 70783894,
+    "actualHourRecords": 11020,
+    "actualMinuteRecords": 109364,
+    "checkpoints": [
+      {
+        "lifetimePeakResidentBytes": 30359552,
+        "measuredMemoryBytes": 6292248,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "before",
+        "residentBytes": 30359552
+      },
+      {
+        "lifetimePeakResidentBytes": 207962112,
+        "measuredMemoryBytes": 130630568,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "loaded",
+        "residentBytes": 176340992
+      },
+      {
+        "lifetimePeakResidentBytes": 207962112,
+        "measuredMemoryBytes": 130630568,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "state-retained",
+        "residentBytes": 176357376
+      },
+      {
+        "lifetimePeakResidentBytes": 207962112,
+        "measuredMemoryBytes": 130630568,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "state-released",
+        "residentBytes": 176357376
+      },
+      {
+        "lifetimePeakResidentBytes": 207962112,
+        "measuredMemoryBytes": 130663336,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "flushed",
+        "residentBytes": 176390144
+      }
+    ],
+    "fixture": {
+      "anchor": 812757540,
+      "ciphertextBytes": 70783703,
+      "days": 7,
+      "entities": 76,
+      "hourlyBuckets": 144,
+      "minuteBuckets": 1440,
+      "records": 120384
+    },
+    "loadReferenceDate": 812757585.4308212,
+    "testExit": 0,
+    "wholeTestPeakResidentBytes": 246579200
+  },
+  "candidate350": {
+    "actualCiphertextBytes": 262010514,
+    "actualHourRecords": 0,
+    "actualMinuteRecords": 446600,
+    "checkpoints": [
+      {
+        "lifetimePeakResidentBytes": 30441472,
+        "measuredMemoryBytes": 6357808,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "before",
+        "residentBytes": 30441472
+      },
+      {
+        "lifetimePeakResidentBytes": 58556416,
+        "measuredMemoryBytes": 35980200,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "loaded",
+        "residentBytes": 58556416
+      },
+      {
+        "lifetimePeakResidentBytes": 58589184,
+        "measuredMemoryBytes": 35980200,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "metadata",
+        "residentBytes": 58589184
+      },
+      {
+        "lifetimePeakResidentBytes": 58621952,
+        "measuredMemoryBytes": 36012968,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "flushed",
+        "residentBytes": 58621952
+      },
+      {
+        "lifetimePeakResidentBytes": 59031552,
+        "measuredMemoryBytes": 37061544,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "selected-query",
+        "residentBytes": 45039616
+      },
+      {
+        "lifetimePeakResidentBytes": 59031552,
+        "measuredMemoryBytes": 44286888,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "warm-query",
+        "residentBytes": 54591488
+      },
+      {
+        "lifetimePeakResidentBytes": 59031552,
+        "measuredMemoryBytes": 44286888,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "query-cache-cleared",
+        "residentBytes": 54591488
+      },
+      {
+        "lifetimePeakResidentBytes": 563118080,
+        "measuredMemoryBytes": 559252752,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "diagnostic-state-materialized",
+        "residentBytes": 563118080
+      }
+    ],
+    "firstQuerySeconds": 4.908793291659094,
+    "fixture": {
+      "anchor": 812759820,
+      "ciphertextBytes": 325708199,
+      "days": 7,
+      "entities": 350,
+      "hourlyBuckets": 144,
+      "minuteBuckets": 1440,
+      "records": 554400
+    },
+    "queryPointCount": 1276,
+    "testExit": 0,
+    "warmQuerySeconds": 0.0014972916687838733,
+    "wholeTestPeakResidentBytes": 762576896
+  },
+  "candidate76": {
+    "actualCiphertextBytes": 70783894,
+    "actualHourRecords": 11020,
+    "actualMinuteRecords": 109364,
+    "checkpoints": [
+      {
+        "lifetimePeakResidentBytes": 30425088,
+        "measuredMemoryBytes": 6325064,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "before",
+        "residentBytes": 30425088
+      },
+      {
+        "lifetimePeakResidentBytes": 41222144,
+        "measuredMemoryBytes": 16319328,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "loaded",
+        "residentBytes": 41222144
+      },
+      {
+        "lifetimePeakResidentBytes": 41238528,
+        "measuredMemoryBytes": 16319328,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "metadata",
+        "residentBytes": 41238528
+      },
+      {
+        "lifetimePeakResidentBytes": 41238528,
+        "measuredMemoryBytes": 16319328,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "flushed",
+        "residentBytes": 41238528
+      },
+      {
+        "lifetimePeakResidentBytes": 42418176,
+        "measuredMemoryBytes": 17482592,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "selected-query",
+        "residentBytes": 42418176
+      },
+      {
+        "lifetimePeakResidentBytes": 53575680,
+        "measuredMemoryBytes": 28640096,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "warm-query",
+        "residentBytes": 53575680
+      },
+      {
+        "lifetimePeakResidentBytes": 53575680,
+        "measuredMemoryBytes": 28640096,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "query-cache-cleared",
+        "residentBytes": 53575680
+      },
+      {
+        "lifetimePeakResidentBytes": 205094912,
+        "measuredMemoryBytes": 180224960,
+        "measuredMemoryMethod": "Mach physical footprint",
+        "phase": "diagnostic-state-materialized",
+        "residentBytes": 205094912
+      }
+    ],
+    "firstQuerySeconds": 1.0655714166350663,
+    "fixture": {
+      "anchor": 812757540,
+      "ciphertextBytes": 70783703,
+      "days": 7,
+      "entities": 76,
+      "hourlyBuckets": 144,
+      "minuteBuckets": 1440,
+      "records": 120384
+    },
+    "loadReferenceDate": 812757585.4308212,
+    "queryPointCount": 1583,
+    "testExit": 0,
+    "warmQuerySeconds": 0.0016696666716597974,
+    "wholeTestPeakResidentBytes": 250675200
+  },
+  "notes": [
+    "Synthetic core-only release XCTest measurements; no GUI, live raw ring, sustained monitoring or reference-hardware budget pass.",
+    "The 76-entity pair used fresh copies of one fixture and the same reference clock; ciphertext size and all retained row counts match. Baseline is commit 983a6a6; candidate source is identified in paged-history-candidate-source.json.",
+    "350 entities means 339 applications, ten projects and system; generation and load ran in separate processes. The original 554400-row fixture exceeded the unchanged 250 MiB production cap; successful load evicted oldest buckets.",
+    "Warm-query checkpoint follows a harness JSON equality assertion as well as the query; it is not a pure cache-allocation measurement. Query timing excludes that assertion.",
+    "Diagnostic-state-materialized and whole-test peak include deliberately materializing every retained row plus heavy validation; normal UI does not call state().",
+    "Single-run component results expose practical tradeoffs, not a universal memory/latency bound; CPU includes different validation work and must not be treated as a production before/after comparison."
+  ]
+}

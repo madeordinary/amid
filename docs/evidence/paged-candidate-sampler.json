@@ -1,0 +1,60 @@
+{
+  "coarseCPUSeconds": {
+    "enumeration": 0.0035159999999999844,
+    "interfaces": 0.001085999999999969,
+    "power": 0.0005600000000000188,
+    "processLoop": 0.306276,
+    "stringReuse": 0.012949999999999975,
+    "systemCounters": 0.0005370000000000028,
+    "volumes": 0.0022080000000000224
+  },
+  "counts": {
+    "enumerated": {
+      "maximum": 897,
+      "minimum": 890
+    },
+    "inaccessible": {
+      "maximum": 210,
+      "minimum": 209
+    },
+    "observed": {
+      "maximum": 686,
+      "minimum": 680
+    }
+  },
+  "elapsedSeconds": 60.005922583,
+  "failures": 0,
+  "fineWallSeconds": {
+    "application": 0.04624017299999986,
+    "construction": 0.006199869000000127,
+    "decoding": 0.033153966999999965,
+    "portsValidation": 0.0573451899999999,
+    "processOS": 0.11509905899999998,
+    "project": 0.04797018700000012
+  },
+  "numericCounters": {
+    "cwdCacheHit": 6732,
+    "cwdCacheMiss": 1452,
+    "markerAccess": 17640,
+    "markerCacheHit": 6636,
+    "markerCacheMiss": 3000
+  },
+  "observedRunnerExitCode": 0,
+  "processCPUPercentOneCore": 0.7170675517984645,
+  "processCPUSeconds": 0.430283,
+  "samples": 12,
+  "samplingThreadCPUPercentOneCore": 0.5461027610178557,
+  "samplingThreadCPUSeconds": 0.327694,
+  "scope": "One numeric collector diagnostic: five-second warmup, then twelve anchored five-second samples. Fine wall stages are nested timing views, not CPU. No overhead subtraction, causal comparison, GUI or sustained-budget pass.",
+  "skips": 0,
+  "sourceFiles": {
+    ".build/arm64-apple-macosx/release/AmidPackageTests.xctest/Contents/MacOS/AmidPackageTests": "659ad8ca9b4d748e0929badc48d5a21ca9ef13ff5f254f18fed916a1f1371450",
+    "Sources/AmidCore/Collection/ProcessStringStorage.swift": "dc9e1aaf60180f23efd7b0297c43e74bf1ce88bc2cc89bd9a3fa290fdc5e9f60",
+    "Sources/AmidCore/Collection/Sampler.swift": "4a4267d1f28eecc73765439e7bd3d20e344f3c9fe7c48a382172ef833996a8e7",
+    "Sources/AmidCore/Collection/SamplerProfile.swift": "5eb8cfe9375fcf6c25528097a3dcccd6871a87d00b594daaeb1ff1ebbe448133",
+    "Sources/CAmid/collectors.c": "3102dd98e9ed1b781f4d5f277b9ffd2306460f32b781a79aab68b8c637043f5b",
+    "Tests/AmidCoreTests/LiveSamplerProfileTests.swift": "1a9edd25a7bfced2c014ee0f3fa532b716483d832ee8d9633e4cc37ecc9062d7"
+  },
+  "tests": 1,
+  "valid": true
+}

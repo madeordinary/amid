@@ -26,10 +26,28 @@ public actor HistoryStore {
     private var failure: String?
     private var previous: Date?
     private var observationInterrupted = false
+    // aggregates/index hold one mutable minute only; immutable archive values stay on disk.
     private var aggregateIndex: [String:Int] = [:]
+    private struct Bucket {
+        var path: String; var bytes: Int; var count: Int
+        var first: Date; var last: Date; var end: Date; var resolution: Double
+        var members: [Int]; var migration: Bool; var noncanonical: Bool
+    }
+    private struct EntityRecord { var id: String; var name: String; var latest: Date }
+    private var catalog: [String:Bucket] = [:]
+    private var tokens: [String:Int] = [:]
+    private var entityRecords: [Int:EntityRecord] = [:]
+    private var nextToken = 0
+    private var workingCommittedIDs = Set<String>()
+    private var workingName: String?
+    private var revision: UInt64 = 0
+    private var entityListCache: [HistoryEntity]?
+    private struct CachedBucket { var generation: String; var points: [HistoryAggregate] }
+    private struct QueryCache { var entity: String; var buckets: [String:CachedBucket] }
+    private var queryCaches: [QueryCache] = []
+    private var bucketReads = 0
+    private var stagedWrites = 0
     private var dirtySegments = Set<String>()
-    private var segmentSizes: [String:Int] = [:]
-    private var segmentPaths: [String:String] = [:]
     private var excludedAlertIDs = Set<String>()
     private var lastAlertWrite: Date?
     public init(directory: URL, keyProvider: any HistoryKeyProvider = KeychainHistoryKeyProvider(), maxBytes: Int = 250 * 1024 * 1024) { self.directory = directory; self.keyProvider = keyProvider; self.maxBytes = max(1024,maxBytes); self.commitObserver = { _ in }; self.memoryObserver = nil; self.loadReferenceDate = nil }
@@ -37,75 +55,192 @@ public actor HistoryStore {
     private var file: URL { directory.appendingPathComponent("history.aesgcm") }
     public func load() {
         autoreleasepool { loadWithinPool() }
-        memoryObserver?(.loadReturned, aggregates.count, 0)
+        memoryObserver?(.loadReturned, aggregateCount, 0)
+    }
+    private var aggregateCount: Int {
+        catalog.reduce(0) { $0 + ($1.key == workingName ? 0 : $1.value.count) } + aggregates.count
     }
     private func loadWithinPool() {
         guard FileManager.default.fileExists(atPath:file.path) else { return }
         do {
             let loadKey = try autoreleasepool { try decodeAndAssignArchive() }
-            memoryObserver?(.decodeReturned, aggregates.count, 0)
-            autoreleasepool {
-                enforce(now:loadReferenceDate ?? Date())
-                memoryObserver?(.enforced, aggregates.count, 0)
-            }
-            memoryObserver?(.enforceReturned, aggregates.count, 0)
-            try autoreleasepool { try persist(using: loadKey) }
-        } catch { failure = "Encrypted history unavailable. Unlock Keychain or clear the app-owned store to recover. No plaintext fallback." }
+            memoryObserver?(.decodeReturned, aggregateCount, 0)
+            autoreleasepool { enforce(now:loadReferenceDate ?? Date(), using:loadKey) }
+            guard failure == nil else { return }
+            memoryObserver?(.enforced, aggregateCount, 0)
+            memoryObserver?(.enforceReturned, aggregateCount, 0)
+            try autoreleasepool { try persist(using:loadKey) }
+        } catch { unavailable() }
+    }
+    private func unavailable() {
+        failure = "Encrypted history unavailable. Unlock Keychain or clear the app-owned store to recover. No plaintext fallback."
+        clearQueryCache()
+    }
+    private func readBucket(_ bucket: Bucket, using key: SymmetricKey) throws -> [HistoryAggregate] {
+        let url = directory.appendingPathComponent(bucket.path)
+        try validateRegular(url)
+        bucketReads += 1
+        return try JSONDecoder().decode([HistoryAggregate].self,from:decrypt(Data(contentsOf:url),using:key))
+    }
+    private func describe(_ rows: [HistoryAggregate], path: String, bytes: Int) throws -> Bucket {
+        guard let first = rows.first, rows.allSatisfy({ segmentName($0) == segmentName(first) }), Set(rows.map(\.id)).count == rows.count else { throw HistoryStorageError.invalidEnvelope }
+        var members = Set<Int>()
+        for row in rows {
+            let token: Int
+            if let existing = tokens[row.entityID] { token = existing }
+            else { token = nextToken; nextToken += 1; tokens[row.entityID] = token }
+            members.insert(token)
+            if entityRecords[token].map({ $0.latest <= row.start }) ?? true { entityRecords[token] = EntityRecord(id:row.entityID,name:row.name,latest:row.start) }
+        }
+        return Bucket(path:path,bytes:bytes,count:rows.count,first:rows.map(\.start).min()!,last:rows.map(\.start).max()!,end:rows.map { $0.start.addingTimeInterval($0.resolution) }.max()!,resolution:first.resolution,members:members.sorted(),migration:rows.contains { $0.requiresPersistenceMigration },noncanonical:rows.contains { hasSignedZero($0) || $0.resolution != 3600 || $0.start.timeIntervalSince1970 != floor($0.start.timeIntervalSince1970 / 3600) * 3600 })
     }
     private func decodeAndAssignArchive() throws -> SymmetricKey {
         try validateDirectory()
         let encrypted = try Data(contentsOf:file)
         guard encrypted.prefix(4) == Data("AMID".utf8) else { throw HistoryStorageError.invalidEnvelope }
         let loadKey = try keyProvider.existingKey()
-        let clear = try AES.GCM.open(AES.GCM.SealedBox(combined:encrypted.dropFirst(4)),using:loadKey,authenticating:Data("AMID".utf8))
-        let archive = try JSONDecoder().decode(Archive.self,from:clear)
+        let archive = try JSONDecoder().decode(Archive.self,from:decrypt(encrypted,using:loadKey))
         guard (1...3).contains(archive.version) else { throw HistoryStorageError.unsupportedVersion(archive.version) }
-        var loaded = archive.aggregates
-        var loadedSizes: [String:Int] = [:]
-        var loadedPaths: [String:String] = [:]
+        // No key or decoded row array is retained by the actor after this synchronous operation.
+        catalog.removeAll(); tokens.removeAll(); entityRecords.removeAll(); nextToken = 0
+        aggregates.removeAll(); aggregateIndex.removeAll(); workingName = nil; workingCommittedIDs.removeAll(); dirtySegments.removeAll(); stagedWrites = 0
+        clearQueryCache()
+        var candidate: [String:Bucket] = [:]
         if archive.version == 3 {
             guard let files = archive.segmentFiles else { throw HistoryStorageError.invalidEnvelope }
             for name in files {
                 guard name.hasPrefix("bucket-"), name.hasSuffix(".aesgcm"), !name.contains("/"), !name.contains("..") else { throw HistoryStorageError.invalidEnvelope }
-                let url = directory.appendingPathComponent(name)
-                try validateRegular(url)
-                let data = try Data(contentsOf:url)
-                let decoded = try decrypt(data,using:loadKey)
-                let bucket = try JSONDecoder().decode([HistoryAggregate].self,from:decoded)
-                guard let first = bucket.first, bucket.allSatisfy({ segmentName($0) == segmentName(first) }), loadedPaths[segmentName(first)] == nil else { throw HistoryStorageError.invalidEnvelope }
-                loaded += bucket
-                loadedSizes[segmentName(first)] = data.count; loadedPaths[segmentName(first)] = name
+                try autoreleasepool {
+                    let url = directory.appendingPathComponent(name); try validateRegular(url)
+                    let data = try Data(contentsOf:url)
+                    let rows = try JSONDecoder().decode([HistoryAggregate].self,from:decrypt(data,using:loadKey))
+                    let entry = try describe(rows,path:name,bytes:data.count)
+                    let logical = segmentName(rows[0])
+                    guard candidate[logical] == nil else { throw HistoryStorageError.invalidEnvelope }
+                    candidate[logical] = entry
+                }
             }
         }
-        memoryObserver?(.decoded, loaded.count, 0)
-        guard Set(loaded.map(\.id)).count == loaded.count else { throw HistoryStorageError.invalidEnvelope }
-        memoryObserver?(.validated, loaded.count, 0)
-        settings = archive.settings; aggregates = loaded; segmentSizes = loadedSizes; segmentPaths = loadedPaths
-        memoryObserver?(.assigned, aggregates.count, 0)
-        dirtySegments = archive.version < 3 ? Set(aggregates.map(segmentName)) : Set(archive.aggregates.map(segmentName))
-        for value in aggregates where value.requiresPersistenceMigration || excluded(value.entityID) { dirtySegments.insert(segmentName(value)) }
-        if !settings.excludedApplications.isEmpty || !settings.excludedProjects.isEmpty {
-            aggregates.removeAll { excluded($0.entityID) }
+        // Inline old archives are the explicit one-time migration exception.
+        guard Set(archive.aggregates.map(\.id)).count == archive.aggregates.count else { throw HistoryStorageError.invalidEnvelope }
+        let inlineGroups = Dictionary(grouping:archive.aggregates,by:segmentName)
+        for (logical,rows) in inlineGroups {
+            if let entry = candidate[logical] {
+                let persisted = try readBucket(entry,using:loadKey)
+                guard Set((persisted + rows).map(\.id)).count == persisted.count + rows.count else { throw HistoryStorageError.invalidEnvelope }
+            }
         }
-        alerts = archive.alerts; actions = archive.actions; shortened = archive.shortenedByCap; bytes = encrypted.count; failure = nil
+        memoryObserver?(.decoded, candidate.values.reduce(0) { $0 + $1.count } + archive.aggregates.count, 0)
+        memoryObserver?(.validated, candidate.values.reduce(0) { $0 + $1.count } + archive.aggregates.count, 0)
+        settings = archive.settings; catalog = candidate; alerts = archive.alerts; actions = archive.actions
+        shortened = archive.shortenedByCap; bytes = encrypted.count + candidate.values.reduce(0) { $0 + $1.bytes }; failure = nil
+        for (logical,rows) in inlineGroups {
+            let existing = try catalog[logical].map { try readBucket($0,using:loadKey) } ?? []
+            try stage(existing + rows, logical:logical, using:loadKey)
+        }
+        // Apply configured exclusions and schema defaults before publishing usable history.
+        for logical in catalog.keys.sorted() {
+            let entry = catalog[logical]!
+            if entry.migration || !settings.excludedApplications.isEmpty || !settings.excludedProjects.isEmpty {
+                let rows = try readBucket(entry,using:loadKey).filter { !excluded($0.entityID) }
+                if entry.migration || rows.count != entry.count { try stage(rows,logical:logical,using:loadKey) }
+            }
+        }
+        revision &+= 1; entityListCache = nil
+        memoryObserver?(.assigned, aggregateCount, 0)
         return loadKey
     }
-    public func state() -> HistoryState { HistoryState(settings:settings,aggregates:aggregates,alerts:alerts,actions:actions,recentSnapshots:recent,storageBytes:bytes,shortenedByCap:shortened,error:failure) }
+    public func metadata() -> HistoryMetadata {
+        HistoryMetadata(settings:settings,alerts:alerts,actions:actions,aggregateCount:failure == nil ? aggregateCount : 0,storageBytes:bytes,shortenedByCap:shortened,error:failure,revision:revision)
+    }
+    public func entities() -> [HistoryEntity] {
+        guard failure == nil else { return [] }
+        if let entityListCache { return entityListCache }
+        let active = Set(catalog.values.flatMap(\.members)).union(aggregates.compactMap { tokens[$0.entityID] })
+        do {
+            var key: SymmetricKey?
+            for token in active {
+                guard let record = entityRecords[token] else { continue }
+                let entries = catalog.values.filter { $0.members.contains(token) }
+                let latestStored = max(entries.map(\.last).max() ?? .distantPast, aggregates.filter { $0.entityID == record.id }.map(\.start).max() ?? .distantPast)
+                if record.latest > latestStored {
+                    let rows: [HistoryAggregate]
+                    if let entry = entries.max(by:{ $0.last < $1.last }) {
+                        if key == nil { key = try keyProvider.existingKey() }
+                        rows = try readBucket(entry,using:key!).filter { $0.entityID == record.id }
+                    } else { rows = aggregates.filter { $0.entityID == record.id } }
+                    if let latest = rows.max(by:{ $0.start < $1.start }) { entityRecords[token] = EntityRecord(id:record.id,name:latest.name,latest:latest.start) }
+                }
+            }
+        } catch { unavailable(); return [] }
+        let result = active.compactMap { entityRecords[$0] }.map { HistoryEntity(id:$0.id,name:$0.name) }.sorted { lhs,rhs in lhs.id == "system" ? rhs.id != "system" : rhs.id == "system" ? false : lhs.id < rhs.id }
+        entityListCache = result; return result
+    }
+    public func clearQueryCache() { queryCaches.removeAll() }
+    public func history(entityID: String, since: Date, until: Date) -> HistoryQuery {
+        func reply(_ points: [HistoryAggregate], _ error: String?) -> HistoryQuery { HistoryQuery(entityID:entityID,since:since,until:until,points:points,revision:revision,error:error) }
+        guard since.timeIntervalSince1970.isFinite, until.timeIntervalSince1970.isFinite, since <= until, until.timeIntervalSince(since).isFinite, until.timeIntervalSince(since) <= 30 * 86400 else { return reply([],"Invalid history range.") }
+        guard failure == nil else { return reply([],failure) }
+        guard let token = tokens[entityID] else { return reply([],nil) }
+        let matching = catalog.filter { $0.value.last >= since && $0.value.first <= until && $0.key != workingName && $0.value.members.contains(token) }
+        var cache = queryCaches.first { $0.entity == entityID } ?? QueryCache(entity:entityID,buckets:[:])
+        cache.buckets = cache.buckets.filter { matching[$0.key] != nil }
+        var key: SymmetricKey?
+        do {
+            for (logical,entry) in matching where cache.buckets[logical]?.generation != entry.path {
+                if key == nil { key = try keyProvider.existingKey() }
+                let points = try autoreleasepool { try readBucket(entry,using:key!).filter { $0.entityID == entityID } }
+                cache.buckets[logical] = CachedBucket(generation:entry.path,points:points)
+            }
+            var points = cache.buckets.values.flatMap(\.points) + aggregates.filter { $0.entityID == entityID }
+            points.removeAll { $0.start < since || $0.start > until }
+            points.sort { $0.start == $1.start ? $0.resolution < $1.resolution : $0.start < $1.start }
+            queryCaches.removeAll { $0.entity == entityID }; queryCaches.append(cache)
+            if queryCaches.count > 2 { queryCaches.removeFirst() }
+            return reply(points,nil)
+        } catch { unavailable(); return reply([],failure) }
+    }
+    /// Expensive diagnostics only: decoded archive rows are returned, never installed as resident state.
+    public func state() -> HistoryState {
+        var values: [HistoryAggregate] = []
+        if failure == nil {
+            do {
+                var key: SymmetricKey?
+                for (logical,entry) in catalog where logical != workingName {
+                    if key == nil { key = try keyProvider.existingKey() }
+                    values += try autoreleasepool { try readBucket(entry,using:key!) }
+                }
+                let pending = workingName.map { dirtySegments.contains($0) } ?? false
+                if pending {
+                    values += aggregates.filter { workingCommittedIDs.contains($0.id) }
+                    values.sort { $0.start < $1.start }
+                    // Preserve the old diagnostic append order until the next durable flush.
+                    values += aggregates.filter { !workingCommittedIDs.contains($0.id) }
+                } else { values += aggregates; values.sort { $0.start < $1.start } }
+            } catch { unavailable(); values.removeAll() }
+        }
+        return HistoryState(settings:settings,aggregates:values,alerts:alerts,actions:actions,recentSnapshots:recent,storageBytes:bytes,shortenedByCap:shortened,error:failure)
+    }
+    func pagingDiagnostics() -> (residentRows: Int, bucketReads: Int, cachedPoints: Int, buckets: Int, committedIDs: Int, entityDirectoryCount: Int) { (aggregates.count,bucketReads,queryCaches.reduce(0) { $0 + $1.buckets.values.reduce(0) { $0 + $1.points.count } },catalog.count,workingCommittedIDs.count,entityRecords.count) }
     public func updateSettings(_ value: HistorySettings, now: Date = Date()) {
         let changedApps = settings.excludedApplications != value.excludedApplications
         let changedProjects = settings.excludedProjects != value.excludedProjects
-        dirtySegments.formUnion(aggregates.map(segmentName))
-        settings = value
-        recentHistoryCache = nil; recentEntitiesCache = nil
+        settings = value; recentHistoryCache = nil; recentEntitiesCache = nil; clearQueryCache()
         if let latest = recent.last { excludedAlertIDs = excludedEntities(in:latest) }
-        if changedApps { aggregates.removeAll { $0.entityID.hasPrefix("project:") } }
-        if changedProjects { aggregates.removeAll { $0.entityID.hasPrefix("app:") } }
-        aggregates.removeAll { excluded($0.entityID) }
-        alerts.removeAll {
-            settings.excludedApplications.contains($0.entityID) || isExcludedEntity($0.entityID) ||
-            (changedProjects && [.appCPU, .appMemoryGrowth, .lowActivityServer].contains($0.category))
+        if failure == nil && (changedApps || changedProjects) {
+            do {
+                var key: SymmetricKey?
+                for logical in catalog.keys.sorted() {
+                    if key == nil { key = try keyProvider.existingKey() }
+                    let rows = try readRows(logical,using:key!).filter { !excluded($0.entityID) && !(changedApps && $0.entityID.hasPrefix("project:")) && !(changedProjects && $0.entityID.hasPrefix("app:")) }
+                    try stage(rows,logical:logical,using:key!)
+                }
+                aggregates.removeAll { excluded($0.entityID) || (changedApps && $0.entityID.hasPrefix("project:")) || (changedProjects && $0.entityID.hasPrefix("app:")) }; rebuildAggregateIndex()
+            } catch { unavailable() }
         }
+        alerts.removeAll { settings.excludedApplications.contains($0.entityID) || isExcludedEntity($0.entityID) || (changedProjects && [.appCPU,.appMemoryGrowth,.lowActivityServer].contains($0.category)) }
         actions.removeAll { isExcludedEntity($0.targetID) || (changedProjects && !settings.excludedProjects.isEmpty) }
+        revision &+= 1; entityListCache = nil
         enforce(now:now); save()
     }
     private func excluded(_ id: String) -> Bool { (id.hasPrefix("app:") && settings.excludedApplications.contains(String(id.dropFirst(4)))) || (id.hasPrefix("project:") && settings.excludedProjects.contains(String(id.dropFirst(8)))) }
@@ -133,6 +268,14 @@ public actor HistoryStore {
         defer { previous = snapshot.timestamp }
         guard !settings.paused, let retention = settings.retention, retention != .off, failure == nil else { return }
         let start = Date(timeIntervalSince1970:floor(snapshot.timestamp.timeIntervalSince1970 / 60) * 60)
+        let logical = "bucket-\(Int64(start.timeIntervalSince1970))-60.aesgcm"
+        if workingName != logical {
+            do {
+                if let old = workingName, dirtySegments.contains(old) { try stage(aggregates,logical:old,using:keyProvider.existingKey()); dirtySegments.remove(old) }
+                aggregates = try catalog[logical].map { try readBucket($0,using:keyProvider.existingKey()) } ?? []
+                workingName = logical; workingCommittedIDs = Set(aggregates.map(\.id)); rebuildAggregateIndex()
+            } catch { unavailable(); return }
+        }
         var groups: [(String,String,Double?,Double?,Bool,Set<MemoryMethod>)] = [("system","System",snapshot.system.cpuPercent,snapshot.system.memory.active.map { Double($0) },snapshot.availability != .available,[])]
         let permitted = snapshot.processes.filter { !settings.excludedApplications.contains($0.applicationID) && !($0.projectPath.map { settings.excludedProjects.contains($0) } ?? false) }
         var filtered = snapshot; filtered.processes = permitted
@@ -158,6 +301,8 @@ public actor HistoryStore {
             }
             else { aggregates[index].gapSeconds += interval }
         }
+        revision &+= 1; entityListCache = nil
+        for row in aggregates { if tokens[row.entityID] == nil { let token = nextToken; nextToken += 1; tokens[row.entityID] = token }; let token = tokens[row.entityID]!; if entityRecords[token].map({ $0.latest <= row.start }) ?? true { entityRecords[token] = EntityRecord(id:row.entityID,name:row.name,latest:row.start) } }
         if previous == nil || floor(previous!.timeIntervalSince1970 / 60) != floor(snapshot.timestamp.timeIntervalSince1970 / 60) { enforce(now:snapshot.timestamp) }
         // Persist at minute boundaries: every raw sample remains in RAM only.
         if previous == nil || floor(previous!.timeIntervalSince1970 / 60) != floor(snapshot.timestamp.timeIntervalSince1970 / 60) { save() }
@@ -234,29 +379,81 @@ public actor HistoryStore {
         if recent.isEmpty { excludedAlertIDs.removeAll() }
         return true
     }
-    public func suspendObservation() { observationInterrupted = true }
-    public func clearMemory() { recent.removeAll(); recentIntervals.removeAll(); recentHistoryCache = nil; recentEntitiesCache = nil; excludedAlertIDs.removeAll(); observationInterrupted = true; if settings.retention == .off || settings.retention == nil { alerts.removeAll(); actions.removeAll() } }
-    public func clear() { aggregates.removeAll(); alerts.removeAll(); actions.removeAll(); recent.removeAll(); recentIntervals.removeAll(); recentHistoryCache = nil; recentEntitiesCache = nil; excludedAlertIDs.removeAll(); previous = nil; observationInterrupted = false; shortened = false; failure = nil; do { try validateDirectory(); if FileManager.default.fileExists(atPath:directory.path) { for url in try FileManager.default.contentsOfDirectory(at:directory,includingPropertiesForKeys:nil) where url.lastPathComponent == "history.aesgcm" || url.lastPathComponent.hasPrefix("bucket-") || url.lastPathComponent.hasPrefix(".cipher-") { try FileManager.default.removeItem(at:url) } }; segmentSizes.removeAll(); segmentPaths.removeAll(); aggregateIndex.removeAll(); dirtySegments.removeAll(); bytes = 0; if settings.retention != nil { try persist() } } catch { failure = "Could not clear the encrypted history store." } }
+    public func suspendObservation() { observationInterrupted = true; clearQueryCache() }
+    public func clearMemory() { clearQueryCache(); recent.removeAll(); recentIntervals.removeAll(); recentHistoryCache = nil; recentEntitiesCache = nil; excludedAlertIDs.removeAll(); observationInterrupted = true; if settings.retention == .off || settings.retention == nil { alerts.removeAll(); actions.removeAll() } }
+    public func clear() {
+        aggregates.removeAll(); catalog.removeAll(); tokens.removeAll(); entityRecords.removeAll(); workingName = nil; workingCommittedIDs.removeAll(); entityListCache = nil; clearQueryCache(); revision &+= 1
+        alerts.removeAll(); actions.removeAll(); recent.removeAll(); recentIntervals.removeAll(); recentHistoryCache = nil; recentEntitiesCache = nil; excludedAlertIDs.removeAll(); previous = nil; observationInterrupted = false; shortened = false; failure = nil
+        do { try validateDirectory(); if FileManager.default.fileExists(atPath:directory.path) { for url in try FileManager.default.contentsOfDirectory(at:directory,includingPropertiesForKeys:nil) where url.lastPathComponent == "history.aesgcm" || url.lastPathComponent.hasPrefix("bucket-") || url.lastPathComponent.hasPrefix(".cipher-") { try FileManager.default.removeItem(at:url) } }; aggregateIndex.removeAll(); dirtySegments.removeAll(); stagedWrites = 0; bytes = 0; if settings.retention != nil { try persist() } } catch { failure = "Could not clear the encrypted history store." }
+    }
     public func flush() { guard settings.retention != nil else { return }; save() }
-    private func enforce(now: Date) {
-        guard let retention = settings.retention, retention != .off else { aggregates.removeAll(); aggregateIndex.removeAll(); alerts.removeAll { now.timeIntervalSince($0.updatedAt) > 900 }; actions.removeAll { now.timeIntervalSince($0.timestamp) > 900 }; return }
+    private func readRows(_ logical: String, using key: SymmetricKey) throws -> [HistoryAggregate] {
+        if logical == workingName { return aggregates }
+        return try catalog[logical].map { try readBucket($0,using:key) } ?? []
+    }
+    private func stage(_ rows: [HistoryAggregate], logical: String, using key: SymmetricKey) throws {
+        if rows.isEmpty { catalog.removeValue(forKey:logical); if logical == workingName { aggregates.removeAll(); workingCommittedIDs.removeAll(); rebuildAggregateIndex() }; revision &+= 1; entityListCache = nil; clearQueryCache(); return }
+        try FileManager.default.createDirectory(at:directory,withIntermediateDirectories:true,attributes:[.posixPermissions:0o700])
+        let path = String(logical.dropLast(7)) + "-" + UUID().uuidString + ".aesgcm"
+        let data = try encrypt(rows,using:key)
+        try writeCiphertext(data,to:directory.appendingPathComponent(path))
+        var entry = try describe(rows,path:path,bytes:data.count)
+        entry.migration = false
+        catalog[logical] = entry
+        if logical == workingName { aggregates = rows; rebuildAggregateIndex(); dirtySegments.remove(logical) }
+        stagedWrites += 1; revision &+= 1; entityListCache = nil
+    }
+    private func merge(_ value: HistoryAggregate, into result: inout HistoryAggregate) {
+        result.cpu.merge(value.cpu); result.memory.merge(value.memory); result.memoryMethods.formUnion(value.memoryMethods); result.cpuObservedSeconds += value.cpuObservedSeconds; result.memoryObservedSeconds += value.memoryObservedSeconds; result.metricCoverageEstimated = result.metricCoverageEstimated || value.metricCoverageEstimated; result.load1.merge(value.load1); result.load5.merge(value.load5); result.load15.merge(value.load15); result.swap.merge(value.swap); result.pressureStates.formUnion(value.pressureStates); result.samples += value.samples; result.observedSeconds += value.observedSeconds; result.gapSeconds += value.gapSeconds; result.cadences.formUnion(value.cadences); result.partial = result.partial || value.partial
+    }
+    private func enforce(now: Date, using loadKey: SymmetricKey? = nil) {
+        guard failure == nil else { return }
+        guard let retention = settings.retention, retention != .off else { catalog.removeAll(); aggregates.removeAll(); aggregateIndex.removeAll(); workingName = nil; workingCommittedIDs.removeAll(); tokens.removeAll(); entityRecords.removeAll(); nextToken = 0; clearQueryCache(); entityListCache = nil; alerts.removeAll { now.timeIntervalSince($0.updatedAt) > 900 }; actions.removeAll { now.timeIntervalSince($0.timestamp) > 900 }; return }
         let cutoff = now.addingTimeInterval(-retention.seconds)
-        aggregates.removeAll { $0.start.addingTimeInterval($0.resolution) <= cutoff }
         alerts.removeAll { $0.updatedAt < cutoff }; actions.removeAll { $0.timestamp < cutoff }
-        var hourly: [String:HistoryAggregate] = [:]
-        aggregates.removeAll { value in
-            guard value.start < now.addingTimeInterval(-86400) else { return false }
-            let hour = Date(timeIntervalSince1970:floor(value.start.timeIntervalSince1970 / 3600) * 3600)
-            if value.resolution != 3600 || value.start != hour || hasSignedZero(value) { dirtySegments.insert("bucket-\(Int64(hour.timeIntervalSince1970))-3600.aesgcm") }
-            let key = value.entityID + ":" + String(hour.timeIntervalSince1970)
-            var result = hourly[key] ?? HistoryAggregate(entityID:value.entityID,name:value.name,start:hour,resolution:3600)
-            result.cpu.merge(value.cpu); result.memory.merge(value.memory); result.memoryMethods.formUnion(value.memoryMethods); result.cpuObservedSeconds += value.cpuObservedSeconds; result.memoryObservedSeconds += value.memoryObservedSeconds; result.metricCoverageEstimated = result.metricCoverageEstimated || value.metricCoverageEstimated; result.load1.merge(value.load1); result.load5.merge(value.load5); result.load15.merge(value.load15); result.swap.merge(value.swap); result.pressureStates.formUnion(value.pressureStates); result.samples += value.samples; result.observedSeconds += value.observedSeconds; result.gapSeconds += value.gapSeconds; result.cadences.formUnion(value.cadences); result.partial = result.partial || value.partial
-            hourly[key] = result
-            return true
-        }
-        aggregates.append(contentsOf: hourly.values)
-        aggregates.sort { $0.start < $1.start }
-        rebuildAggregateIndex()
+        do {
+            var key = loadKey
+            func getKey() throws -> SymmetricKey { if let key { return key }; let fetched = try keyProvider.existingKey(); key = fetched; return fetched }
+            if let name = workingName, dirtySegments.contains(name) {
+                aggregates.removeAll { $0.start.addingTimeInterval($0.resolution) <= cutoff }
+                workingCommittedIDs.formIntersection(aggregates.map(\.id))
+                if !aggregates.isEmpty { _ = try describe(aggregates,path:catalog[name]?.path ?? "",bytes:catalog[name]?.bytes ?? 0) }
+            }
+            for name in catalog.keys.sorted() {
+                let entry = catalog[name]!
+                if entry.end <= cutoff { catalog.removeValue(forKey:name); if name == workingName { aggregates.removeAll(); workingName = nil; workingCommittedIDs.removeAll(); rebuildAggregateIndex() }; revision &+= 1; entityListCache = nil }
+                else if entry.first < cutoff {
+                    let rows = try readRows(name,using:getKey()).filter { $0.start.addingTimeInterval($0.resolution) > cutoff }
+                    if rows.count != entry.count { try stage(rows,logical:name,using:getKey()) }
+                }
+            }
+            let boundary = now.addingTimeInterval(-86400)
+            var hours: [Int64:[String]] = [:]
+            for (name,entry) in catalog where entry.first < boundary {
+                let hour = Int64(floor(entry.first.timeIntervalSince1970 / 3600))
+                hours[hour,default:[]].append(name)
+            }
+            for hour in hours.keys.sorted() {
+                let names = hours[hour]!
+                if names.count == 1, let entry = catalog[names[0]], entry.resolution == 3600, !entry.noncanonical, !entry.migration { continue }
+                var merged: [String:HistoryAggregate] = [:]
+                var kept: [String:[HistoryAggregate]] = [:]
+                for name in names.sorted(by: { catalog[$0]!.first == catalog[$1]!.first ? $0 < $1 : catalog[$0]!.first < catalog[$1]!.first }) {
+                    for value in try readRows(name,using:getKey()) {
+                        guard value.start < boundary else { kept[name,default:[]].append(value); continue }
+                        let start = Date(timeIntervalSince1970:floor(value.start.timeIntervalSince1970 / 3600) * 3600)
+                        let resultKey = value.entityID + ":" + String(start.timeIntervalSince1970)
+                        var result = merged[resultKey] ?? HistoryAggregate(entityID:value.entityID,name:value.name,start:start,resolution:3600)
+                        merge(value,into:&result); merged[resultKey] = result
+                    }
+                }
+                for name in names { catalog.removeValue(forKey:name); if name == workingName { aggregates = kept[name] ?? []; workingCommittedIDs.formIntersection(aggregates.map(\.id)); rebuildAggregateIndex() } }
+                for (name,rows) in kept { try stage(rows,logical:name,using:getKey()) }
+                let output = Dictionary(grouping:merged.values,by:segmentName)
+                for (name,rows) in output { try stage(rows,logical:name,using:getKey()) }
+                revision &+= 1; entityListCache = nil
+            }
+        } catch { unavailable() }
     }
     private func rebuildAggregateIndex() {
         aggregateIndex.removeAll(keepingCapacity: true)
@@ -266,7 +463,7 @@ public actor HistoryStore {
             precondition(replaced == nil)
         }
     }
-    private func save() { guard failure == nil, settings.retention != nil else { return }; do { try persist(); failure = nil } catch { failure = "Encrypted history could not be saved. No plaintext fallback." } }
+    private func save() { guard failure == nil, settings.retention != nil else { return }; do { try persist(); failure = nil } catch { clearQueryCache(); failure = "Encrypted history could not be saved. No plaintext fallback." } }
     private func validateDirectory() throws {
         var info = stat()
         if lstat(directory.path,&info) == 0 { guard info.st_mode & S_IFMT == S_IFDIR else { throw HistoryStorageError.unsafePath } }
@@ -294,50 +491,45 @@ public actor HistoryStore {
         if let loadKey { key = loadKey } else { key = try keyProvider.key() }
         try FileManager.default.createDirectory(at:directory,withIntermediateDirectories:true,attributes:[.posixPermissions:0o700])
         try FileManager.default.setAttributes([.posixPermissions:0o700],ofItemAtPath:directory.path)
-        var groups: [String:[Int]] = [:]
-        for index in aggregates.indices { groups[segmentName(aggregates[index]), default: []].append(index) }
-        memoryObserver?(.grouped, aggregates.count, 0)
-        for name in groups.keys where segmentPaths[name] == nil { dirtySegments.insert(name) }
-        var encodedSegments: [String:Data] = [:]
-        for name in dirtySegments where groups[name] != nil { encodedSegments[name] = try encrypt(groups[name]!.map { aggregates[$0] },using:key) }
-        memoryObserver?(.encoded, aggregates.count, encodedSegments.count)
+        if let name = workingName, dirtySegments.contains(name) { try stage(aggregates,logical:name,using:key) }
+        var next = catalog
         let enabled = settings.retention != .off && settings.retention != nil
-        var aggregateMembershipChanged = false
-        if !enabled { groups.removeAll(); encodedSegments.removeAll(); aggregateMembershipChanged = true }
-        var paths = segmentPaths
-        for name in encodedSegments.keys { paths[name] = String(name.dropLast(7)) + "-" + UUID().uuidString + ".aesgcm" }
-        var archive = Archive(settings:settings,aggregates:[],alerts:enabled ? alerts : [],actions:enabled ? actions : [],shortenedByCap:shortened,segmentFiles:groups.keys.compactMap { paths[$0] }.sorted())
-        var manifest = try encrypt(archive,using:key)
-        var sizes = groups.mapValues { values in encodedSegments[segmentName(aggregates[values[0]])]?.count ?? segmentSizes[segmentName(aggregates[values[0]])] ?? 0 }
-        while manifest.count + sizes.values.reduce(0,+) > maxBytes {
+        if !enabled { next.removeAll() }
+        memoryObserver?(.grouped, aggregateCount, 0)
+        memoryObserver?(.encoded, aggregateCount, stagedWrites)
+        func encodedManifest() throws -> Data {
+            try encrypt(Archive(settings:settings,aggregates:[],alerts:enabled ? alerts : [],actions:enabled ? actions : [],shortenedByCap:shortened,segmentFiles:next.values.map(\.path).sorted()),using:key)
+        }
+        var manifest = try encodedManifest()
+        var size = next.values.reduce(0) { $0 + $1.bytes }
+        let oldest = next.keys.sorted { next[$0]!.first < next[$1]!.first }
+        var oldestIndex = 0
+        while manifest.count + size > maxBytes {
             shortened = true
-            if let oldest = groups.keys.min(by: { aggregates[groups[$0]![0]].start < aggregates[groups[$1]![0]].start }) { groups.removeValue(forKey:oldest); sizes.removeValue(forKey:oldest); encodedSegments.removeValue(forKey:oldest); aggregateMembershipChanged = true }
+            if oldestIndex < oldest.count { let removed = next.removeValue(forKey:oldest[oldestIndex])!; size -= removed.bytes; oldestIndex += 1 }
             else if !alerts.isEmpty { alerts.removeFirst() }
             else if !actions.isEmpty { actions.removeFirst() }
             else { throw HistoryStorageError.invalidEnvelope }
-            archive = Archive(settings:settings,aggregates:[],alerts:enabled ? alerts : [],actions:enabled ? actions : [],shortenedByCap:shortened,segmentFiles:groups.keys.compactMap { paths[$0] }.sorted())
-            manifest = try encrypt(archive,using:key)
+            manifest = try encodedManifest()
         }
-        for (name,data) in encodedSegments where groups[name] != nil { try writeCiphertext(data,to:directory.appendingPathComponent(paths[name]!)) }
-        // New generation directory entries must be durable before a manifest can name them.
+        // All provisional files are ciphertext; no full encoded archive is held in memory.
         try synchronizeDirectory()
         try commitObserver(.generationsDurable)
         try writeCiphertext(manifest,to:file)
-        // Never remove an old generation until the replacement manifest is durable.
         try synchronizeDirectory()
         try commitObserver(.manifestDurable)
-        let activePaths = Set(groups.keys.compactMap { paths[$0] })
+        let activePaths = Set(next.values.map(\.path))
         for url in try FileManager.default.contentsOfDirectory(at:directory,includingPropertiesForKeys:nil) where (url.lastPathComponent.hasPrefix("bucket-") && !activePaths.contains(url.lastPathComponent)) || url.lastPathComponent.hasPrefix(".cipher-") { try FileManager.default.removeItem(at:url) }
         try synchronizeDirectory()
-        memoryObserver?(.written, aggregates.count, encodedSegments.count)
-        // Existing mutations maintain the index; preserve it when persistence changes no rows or order.
-        if aggregateMembershipChanged || aggregates.indices.dropFirst().contains(where: { aggregates[$0-1].start > aggregates[$0].start }) {
-            aggregates.removeAll { groups[segmentName($0)] == nil }
-            aggregates.sort { $0.start < $1.start }
-            rebuildAggregateIndex()
-        }
-        segmentSizes = sizes; segmentPaths = paths.filter { groups[$0.key] != nil }; dirtySegments.removeAll(); bytes = manifest.count + sizes.values.reduce(0,+)
-        memoryObserver?(.indexReady, aggregates.count, encodedSegments.count)
+        memoryObserver?(.written, aggregateCount, stagedWrites)
+        if catalog.keys.contains(where:{next[$0] == nil}) { revision &+= 1; entityListCache = nil }
+        catalog = next
+        if let name = workingName, catalog[name] == nil { aggregates.removeAll(); workingName = nil; workingCommittedIDs.removeAll(); rebuildAggregateIndex() }
+        workingCommittedIDs = Set(aggregates.map(\.id))
+        dirtySegments.removeAll(); stagedWrites = 0; bytes = manifest.count + size
+        let active = Set(catalog.values.flatMap(\.members)).union(aggregates.compactMap { tokens[$0.entityID] })
+        entityRecords = entityRecords.filter { active.contains($0.key) }; tokens = tokens.filter { active.contains($0.value) }
+        memoryObserver?(.indexReady, aggregateCount, 0)
     }
     private func synchronizeDirectory() throws {
         let descriptor = open(directory.path, O_RDONLY | O_DIRECTORY | O_NOFOLLOW)

@@ -7,15 +7,30 @@ import ServiceManagement
 
 @MainActor @Observable
 final class AppModel {
-    var destination: Destination = .overview
+    var destination: Destination = .overview { didSet { if destination != oldValue { historySelectionChanged() } } }
     var snapshot = Snapshot.empty {
         didSet {
             let attention = snapshot.availability == .available && [.warning, .critical].contains(snapshot.system.memory.pressure)
             if pressureAttention != attention { pressureAttention = attention }
         }
     }
-    var settings = HistorySettings() { didSet { settingsRevision += 1 } }
+    var settings = HistorySettings() {
+        didSet {
+            settingsRevision += 1
+            if settings.retention != oldValue.retention || settings.excludedApplications != oldValue.excludedApplications || settings.excludedProjects != oldValue.excludedProjects { invalidateHistoryPresentation() }
+        }
+    }
+    // Only the selected retained entity/range; never a full archive copy.
     var aggregates: [HistoryAggregate] = []
+    var retainedHistoryNames: [String: String] = ["system": "System"]
+    var inspectorHistoryPoints: [HistoryAggregate] = []
+    var inspectorHistoryEntity: String?
+    var historyQueryError: String?
+    var inspectorHistoryError: String?
+    private var historyPresentationEpoch = 0
+    private var historyRequestRevision = 0
+    private var inspectorRequestRevision = 0
+    private var quitting = false
     var recentHistoryPoints: [HistoryAggregate] = []
     var recentHistoryNames: [String: String] = ["system": "System"]
     var memoryHistoryRevision = 0
@@ -30,10 +45,10 @@ final class AppModel {
         selectedGroupID = id
         groupNavigationRevision += 1
     }
-    var selectedGroupID: String?
+    var selectedGroupID: String? { didSet { if selectedGroupID != oldValue { historySelectionChanged() } } }
     var selectedProcess: ProcessSample?
-    var historyEntity = "system"
-    var historyHours = 24.0
+    var historyEntity = "system" { didSet { if historyEntity != oldValue { historySelectionChanged() } } }
+    var historyHours = 24.0 { didSet { if historyHours != oldValue { historySelectionChanged() } } }
     let benchmarkPresentationMode = GUIBenchmarkEvidence.presentationMode(arguments: CommandLine.arguments)
     var shouldSuppressHiddenOverview: Bool {
         benchmarkPresentationMode.suppressesOverview(windowVisible: fullWindowVisible, isOverview: destination == .overview)
@@ -41,7 +56,12 @@ final class AppModel {
     private(set) var overviewPresentation = OverviewPresentation()
     private var overviewSourceCleared = false
     var fullWindowVisible = false {
-        didSet { if fullWindowVisible && !oldValue { updateOverviewPresentation() } }
+        didSet {
+            if fullWindowVisible != oldValue {
+                invalidateHistoryPresentation()
+                if fullWindowVisible { updateOverviewPresentation(); Task { await refreshHistoryPresentation() } }
+            }
+        }
     }
     func updateOverviewPresentation(now: Date = Date()) {
         guard fullWindowVisible else { return }
@@ -144,6 +164,11 @@ final class AppModel {
         return localizedFormat("%@s actual cadence · %@", snapshot.cadence.formatted(.number.precision(.fractionLength(1))), lastRefresh.formatted(date: .omitted, time: .standard))
     }
     func alias(_ id: String, fallback: String) -> String { settings.aliases[id] ?? fallback }
+    func historyDisplayName(entityID: String, fallback: String) -> String {
+        if entityID == "system" { return localized("System") }
+        let rawID = String(entityID.dropFirst(entityID.hasPrefix("app:") ? 4 : entityID.hasPrefix("project:") ? 8 : 0))
+        return settings.aliases[entityID] ?? settings.aliases[rawID] ?? fallback
+    }
     func start() async {
         guard !started else { return }; started = true
         let directory: URL
@@ -156,9 +181,9 @@ final class AppModel {
                 }.value
                 store = imported.store
                 await imported.store.load()
-                let loaded = await imported.store.state()
+                let loaded = await imported.store.metadata()
                 guard loaded.error == nil else { failVerificationStartup(); return }
-                verificationSeedEvidence = GUIBenchmarkEvidence.HistorySeed(provenance: imported.summary, actualLoadedAggregates: loaded.aggregates.count)
+                verificationSeedEvidence = GUIBenchmarkEvidence.HistorySeed(provenance: imported.summary, actualLoadedAggregates: loaded.aggregateCount)
             } catch { failVerificationStartup(); return }
         } else if isVerification {
             directory = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("amid-ui-verification-\(ProcessInfo.processInfo.processIdentifier)")
@@ -323,30 +348,106 @@ final class AppModel {
     private func configureAlerts() async {
         await alerts.updateSettings(AlertSettings(enabledRules: Set(settings.alertEnabledRules.compactMap(AlertCategory.init(rawValue:))), excludedApplications: settings.excludedApplications, diskThresholdBytes: settings.diskThresholdBytes))
     }
+    private func invalidateHistoryPresentation() {
+        historyPresentationEpoch += 1
+        aggregates = []; inspectorHistoryPoints = []; inspectorHistoryEntity = nil
+        retainedHistoryNames = ["system": "System"]
+        recentHistoryPoints = []; recentHistoryNames = ["system": "System"]
+        historyQueryError = nil; inspectorHistoryError = nil
+        let store = store
+        Task { await store?.clearQueryCache() }
+    }
+    private func historySelectionChanged() {
+        invalidateHistoryPresentation()
+        Task { await refreshHistoryPresentation() }
+    }
+    private var historyPresentationAllowed: Bool {
+        fullWindowVisible && !locked && !sleeping && !clearingHistory && !quitting
+    }
+    private var selectedInspectorEntity: String? {
+        guard let selectedGroupID else { return nil }
+        switch destination {
+        case .applications: return "app:" + selectedGroupID
+        case .projects: return "project:" + selectedGroupID
+        default: return nil
+        }
+    }
     private func syncStore(importSettingsAt revision: Int? = nil) async {
-        guard !clearingHistory else { return }
+        guard !clearingHistory, !quitting else { return }
         let activeGeneration = generation
-        guard let state = await store?.state() else { return }
-        guard activeGeneration == generation, !clearingHistory else { return }
+        guard let state = await store?.metadata() else { return }
+        guard activeGeneration == generation, !clearingHistory, !quitting else { return }
         if let revision, settingsRevision == revision { settings = state.settings }
-        if fullWindowVisible && (destination == .history || selectedGroupID != nil) {
-            aggregates = state.aggregates
-        } else { aggregates = [] }
         alertEvents = state.alerts.filter { $0.dismissedAt == nil && !dismissedAlertIDs.contains($0.id) }.sorted { $0.updatedAt > $1.updatedAt }
         storageBytes = state.storageBytes; shortenedByCap = state.shortenedByCap; error = state.error.map { localized($0) }
-        let entity = historyEntity
-        if settings.retention == .off && fullWindowVisible && destination == .history && !locked && !sleeping {
-            let names = await store?.recentHistoryEntities() ?? [:]
-            guard activeGeneration == generation, !clearingHistory else { return }
-            if entity != "system" && names[entity] == nil {
-                historyEntity = "system"; recentHistoryPoints = []; recentHistoryNames = names
-                return
+        guard historyPresentationAllowed else { return }
+        // A pending exclusion/retention write must not query the previous store scope.
+        guard settings.retention == state.settings.retention,
+              settings.excludedApplications == state.settings.excludedApplications,
+              settings.excludedProjects == state.settings.excludedProjects else { return }
+        let epoch = historyPresentationEpoch, settingsToken = settingsRevision
+        if settings.retention == .off {
+            if destination == .history {
+                let entity = historyEntity
+                let names = await store?.recentHistoryEntities() ?? [:]
+                let points = await recentHistory(for: entity)
+                guard activeGeneration == generation, epoch == historyPresentationEpoch, settingsToken == settingsRevision,
+                      historyPresentationAllowed, destination == .history, historyEntity == entity else { return }
+                if entity != "system" && names[entity] == nil { historyEntity = "system"; return }
+                recentHistoryNames = names; recentHistoryPoints = points
             }
-            let points = await recentHistory(for: entity)
-            guard activeGeneration == generation, historyEntity == entity, settings.retention == .off,
-                  fullWindowVisible, destination == .history, !locked, !sleeping else { return }
-            recentHistoryNames = names; recentHistoryPoints = points
-        } else { recentHistoryPoints = []; recentHistoryNames = ["system": "System"] }
+            if let entity = selectedInspectorEntity { await refreshInspectorHistoryPresentation(for: entity) }
+            return
+        }
+        guard state.error == nil else { invalidateHistoryPresentation(); return }
+        if destination == .history {
+            let entities = await store?.entities() ?? []
+            guard activeGeneration == generation, epoch == historyPresentationEpoch, settingsToken == settingsRevision,
+                  historyPresentationAllowed, destination == .history else { return }
+            retainedHistoryNames = Dictionary(entities.map { ($0.id, $0.name) }, uniquingKeysWith: { _, new in new })
+            retainedHistoryNames["system"] = "System"
+            await receiveHistoryQuery(entityID: historyEntity, inspector: false, revision: state.revision) { entity, since, until in
+                await self.store?.history(entityID: entity, since: since, until: until)
+            }
+        } else if let entity = selectedInspectorEntity {
+            await receiveHistoryQuery(entityID: entity, inspector: true, revision: state.revision) { entity, since, until in
+                await self.store?.history(entityID: entity, since: since, until: until)
+            }
+        }
+    }
+    // The same acceptance guard protects actor replies and delayed-reply regression tests.
+    func receiveHistoryQuery(entityID: String, inspector: Bool, revision: UInt64,
+                             fetch: (String, Date, Date) async -> HistoryQuery?) async {
+        guard historyPresentationAllowed, settings.retention != nil, settings.retention != .off,
+              historyHours.isFinite, historyHours > 0, historyHours <= 720,
+              inspector ? selectedInspectorEntity == entityID : (destination == .history && historyEntity == entityID) else { return }
+        let activeGeneration = generation, epoch = historyPresentationEpoch, settingsToken = settingsRevision
+        let hours = historyHours, selectedDestination = destination
+        if inspector { inspectorRequestRevision += 1 } else { historyRequestRevision += 1 }
+        let request = inspector ? inspectorRequestRevision : historyRequestRevision
+        let until = Date(), since = until.addingTimeInterval(-hours * 3600)
+        let query = await fetch(entityID, since, until)
+        guard activeGeneration == generation, epoch == historyPresentationEpoch, settingsToken == settingsRevision,
+              historyPresentationAllowed, historyHours == hours, destination == selectedDestination,
+              request == (inspector ? inspectorRequestRevision : historyRequestRevision),
+              inspector ? selectedInspectorEntity == entityID : historyEntity == entityID else { return }
+        guard let query, query.entityID == entityID, query.since == since, query.until == until,
+              query.revision == revision, query.error == nil else {
+            if inspector { inspectorHistoryPoints = []; inspectorHistoryEntity = entityID; inspectorHistoryError = localized("History measurements unavailable") }
+            else { aggregates = []; historyQueryError = localized("History measurements unavailable") }
+            return
+        }
+        if inspector { inspectorHistoryPoints = query.points; inspectorHistoryEntity = entityID; inspectorHistoryError = nil }
+        else { aggregates = query.points; historyQueryError = nil }
+    }
+    func refreshInspectorHistoryPresentation(for entity: String) async {
+        guard historyPresentationAllowed, selectedInspectorEntity == entity else { return }
+        if settings.retention != .off { await syncStore(); return }
+        let activeGeneration = generation, epoch = historyPresentationEpoch, settingsToken = settingsRevision
+        let points = await recentHistory(for: entity)
+        guard activeGeneration == generation, epoch == historyPresentationEpoch, settingsToken == settingsRevision,
+              historyPresentationAllowed, settings.retention == .off, selectedInspectorEntity == entity else { return }
+        inspectorHistoryEntity = entity; inspectorHistoryPoints = points
     }
     func refreshHistoryPresentation() async { await syncStore() }
     func expireMemoryHistory(now: Date = Date()) async {
@@ -361,10 +462,12 @@ final class AppModel {
         await syncStore()
     }
     func recentHistory(for entity: String) async -> [HistoryAggregate] {
-        let activeGeneration = generation
-        guard settings.retention == .off, !locked, !sleeping, !clearingHistory else { return [] }
+        let activeGeneration = generation, settingsToken = settingsRevision
+        guard settings.retention == .off, !locked, !sleeping, !clearingHistory, !quitting,
+              !(entity.hasPrefix("app:") && settings.excludedApplications.contains(String(entity.dropFirst(4)))),
+              !(entity.hasPrefix("project:") && settings.excludedProjects.contains(String(entity.dropFirst(8)))) else { return [] }
         let points = await store?.recentHistory(entityID: entity) ?? []
-        guard activeGeneration == generation, settings.retention == .off, !locked, !sleeping, !clearingHistory else { return [] }
+        guard activeGeneration == generation, settingsToken == settingsRevision, settings.retention == .off, !locked, !sleeping, !clearingHistory, !quitting else { return [] }
         return points
     }
     func togglePause() {
@@ -394,6 +497,7 @@ final class AppModel {
         benchmarkSession?.invalidate("History was cleared during the run.")
         generation += 1
         clearingHistory = true
+        invalidateHistoryPresentation()
         overviewSourceCleared = true
         overviewPresentation = OverviewPresentation()
         snapshot = .empty
@@ -485,7 +589,7 @@ final class AppModel {
         case "screen": screenLocked = enabled
         default: sessionInactive = enabled
         }
-        if sleeping || locked { overviewSourceCleared = true; overviewPresentation = OverviewPresentation() }
+        if sleeping || locked { invalidateHistoryPresentation(); overviewSourceCleared = true; overviewPresentation = OverviewPresentation() }
         await sampler.resetBaselines(); lastRefresh = nil
         await actions.resetObservation()
         if sleeping || locked {
@@ -501,6 +605,8 @@ final class AppModel {
         } else { await refresh() }
     }
     func prepareToQuit() async {
+        quitting = true
+        invalidateHistoryPresentation()
         overviewSourceCleared = true
         overviewPresentation = OverviewPresentation()
         benchmarkSession?.invalidate("The application quit before benchmark completion.")

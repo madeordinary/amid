@@ -111,11 +111,8 @@ struct GroupInspector: View {
 struct GroupHistorySummary: View {
     @Bindable var model: AppModel
     let entityID: String
-    @State private var recentPoints: [HistoryAggregate] = []
     private var points: [HistoryAggregate] {
-        if model.settings.retention == .off { return recentPoints }
-        let cutoff = Date().addingTimeInterval(-model.historyHours * 3600)
-        return model.aggregates.filter { $0.entityID == entityID && $0.start >= cutoff }
+        model.inspectorHistoryEntity == entityID ? model.inspectorHistoryPoints : []
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -129,7 +126,8 @@ struct GroupHistorySummary: View {
                 }
                 Spacer()
             }
-            if points.isEmpty {
+            if let queryError = model.inspectorHistoryError { Text(verbatim: queryError).foregroundStyle(.secondary) }
+            else if points.isEmpty {
                 Text("No measurements in this interval. Processes below are current observations.")
                     .font(.caption).foregroundStyle(.secondary)
             } else {
@@ -140,10 +138,6 @@ struct GroupHistorySummary: View {
                 Text("Missing intervals stay gaps. Processes below are current observations; View history shows this same range with metric methods and coverage.")
                     .font(.caption).foregroundStyle(.secondary)
             }
-        }
-        .task(id: entityID + ":\(model.snapshot.timestamp.timeIntervalSince1970):\(model.settings.retention?.rawValue ?? ""):\(model.memoryHistoryRevision)") {
-            let values = await model.recentHistory(for: entityID)
-            if !Task.isCancelled { recentPoints = values }
         }
     }
 }

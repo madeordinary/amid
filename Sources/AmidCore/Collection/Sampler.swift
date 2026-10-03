@@ -15,15 +15,15 @@ public enum ProjectAttribution {
         var markerCache: [String: Bool] = [:]
         return root(for: workingDirectory, boundaries: boundaries, markerCache: &markerCache)
     }
-    static func root(for workingDirectory: String, boundaries: [String], markerCache: inout [String: Bool]) -> String? {
+    static func root(for workingDirectory: String, boundaries: [String], markerCache: inout [String: Bool], profile: SamplerProfile? = nil) -> String? {
         guard workingDirectory.hasPrefix("/") else { return nil }
         var current = URL(fileURLWithPath: workingDirectory).standardizedFileURL.path
         let limits = Set(boundaries.filter { $0.hasPrefix("/") }.map { URL(fileURLWithPath: $0).standardizedFileURL.path })
         if let explicit = limits.filter({ current == $0 || current.hasPrefix($0 == "/" ? "/" : $0 + "/") }).max(by: { $0.count < $1.count }) { return explicit }
         for _ in 0..<12 {
             let hasMarker: Bool
-            if let cached = markerCache[current] { hasMarker = cached }
-            else { hasMarker = markers.contains(where: { ((current == "/" ? "/" : current + "/") + $0).withCString { Darwin.access($0, F_OK) == 0 } }); markerCache[current] = hasMarker }
+            if let cached = markerCache[current] { profile?.count(.markerCacheHit); hasMarker = cached }
+            else { profile?.count(.markerCacheMiss); hasMarker = markers.contains(where: { profile?.count(.markerAccess); return ((current == "/" ? "/" : current + "/") + $0).withCString { Darwin.access($0, F_OK) == 0 } }); markerCache[current] = hasMarker }
             if hasMarker { return current }
             if limits.contains(current) || current == "/" { break }
             guard let separator = current.lastIndex(of: "/") else { break }
@@ -120,13 +120,16 @@ public actor Sampler {
             let name = cString(raw.name)
             let observedCWD = raw.cwd_status == 1 ? cString(raw.cwd) : ""
             let cwd = observedCWD.isEmpty ? nil : observedCWD
+            profile?.endFine(.decoding)
             let app = Self.application(executable: executable, identity: identity, name: name)
+            let runtime = profile == nil ? nil : Self.runtime(executable)
+            profile?.endFine(.application)
             var project: String?
             if let cwd {
-                if let cached = projectsByCWD[cwd] { project = cached.isEmpty ? nil : cached }
-                else { project = ProjectAttribution.root(for: cwd, boundaries: projectBoundaries, markerCache: &markerCache); projectsByCWD[cwd] = project ?? "" }
+                if let cached = projectsByCWD[cwd] { profile?.count(.cwdCacheHit); project = cached.isEmpty ? nil : cached }
+                else { profile?.count(.cwdCacheMiss); project = ProjectAttribution.root(for: cwd, boundaries: projectBoundaries, markerCache: &markerCache, profile: profile); projectsByCWD[cwd] = project ?? "" }
             }
-            profile?.endFine(.attribution)
+            profile?.endFine(.project)
             var portStatus: Int32 = 0
             let portCount = amid_ports(pid, &ports, Int32(ports.count), &portStatus)
             // Revalidate identity after socket inspection as well.
@@ -139,7 +142,7 @@ public actor Sampler {
             }).sorted { $0.id < $1.id }
             let seen = firstSeen[identity] ?? date
             nextSeen[identity] = seen
-            processes.append(ProcessSample(identity: identity, parentPID: raw.parent, executable: executable, name: name, runtime: Self.runtime(executable), cpuPercent: cpu, memoryBytes: raw.memory_method == 0 ? nil : raw.memory, memoryMethod: raw.memory_method == 1 ? .footprint : raw.memory_method == 2 ? .rss : .unavailable, workingDirectory: cwd, projectPath: project, applicationID: app.0, applicationName: app.1, groupingReason: app.2, endpoints: endpoints, portAvailability: portStatus == 1 ? .available : portStatus == 2 ? .denied : .unavailable, observedSince: seen))
+            processes.append(ProcessSample(identity: identity, parentPID: raw.parent, executable: executable, name: name, runtime: profile == nil ? Self.runtime(executable) : runtime, cpuPercent: cpu, memoryBytes: raw.memory_method == 0 ? nil : raw.memory, memoryMethod: raw.memory_method == 1 ? .footprint : raw.memory_method == 2 ? .rss : .unavailable, workingDirectory: cwd, projectPath: project, applicationID: app.0, applicationName: app.1, groupingReason: app.2, endpoints: endpoints, portAvailability: portStatus == 1 ? .available : portStatus == 2 ? .denied : .unavailable, observedSince: seen))
             profile?.endFine(.construction)
         }
         profile?.end(.processLoop)

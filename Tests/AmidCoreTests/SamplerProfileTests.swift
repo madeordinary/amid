@@ -48,6 +48,41 @@ final class SamplerProfileTests: XCTestCase {
         XCTAssertNil(report.coarse["volumes"]?.cpuSeconds)
         XCTAssertEqual(profile.finish().coarse["volumes"]?.unknownCPUIntervals, 1)
     }
+    func testRefinedWallBoundariesAndNumericCountersAreSeparate() throws {
+        var wall = [0.0, 1.0, 3.0, 6.0]
+        let profile = SamplerProfile(readCPU: { .init(wall: 0, cpu: 0) }, readWall: { wall.removeFirst() })
+        profile.beginIteration()
+        profile.endFine(.decoding); profile.endFine(.application); profile.endFine(.project)
+        profile.endIteration()
+        profile.count(.cwdCacheMiss); profile.count(.cwdCacheHit)
+        profile.count(.markerCacheMiss); profile.count(.markerCacheHit)
+        for _ in 0..<6 { profile.count(.markerAccess) }
+        let report = profile.finish()
+        XCTAssertEqual(report.fineWall["decoding"]?.wallSeconds, 1)
+        XCTAssertEqual(report.fineWall["application"]?.wallSeconds, 2)
+        XCTAssertEqual(report.fineWall["project"]?.wallSeconds, 3)
+        XCTAssertEqual(report.counters, ["cwdCacheMiss": 1, "cwdCacheHit": 1, "markerCacheMiss": 1, "markerCacheHit": 1, "markerAccess": 6])
+        profile.count(.markerAccess)
+        XCTAssertEqual(profile.finish().counters?["markerAccess"], 6)
+        let encoder = JSONEncoder()
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: encoder.encode(report)) as? [String: Any])
+        object.removeValue(forKey: "counters")
+        let historical = try JSONDecoder().decode(SamplerProfile.Report.self, from: JSONSerialization.data(withJSONObject: object))
+        XCTAssertNil(historical.counters)
+    }
+    func testProjectCountersReflectActualMarkerQueriesAndCacheReuse() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("amid-marker-profile-" + UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try Data().write(to: directory.appendingPathComponent(".git"))
+        var cache: [String: Bool] = [:]
+        let profile = SamplerProfile(readCPU: { .init(wall: 0, cpu: 0) }, readWall: { 0 })
+        let first = ProjectAttribution.root(for: directory.path, boundaries: [], markerCache: &cache, profile: profile)
+        let second = ProjectAttribution.root(for: directory.path, boundaries: [], markerCache: &cache, profile: profile)
+        XCTAssertEqual(first, second); XCTAssertNotNil(first)
+        XCTAssertEqual(profile.finish().counters, ["markerCacheMiss": 1, "markerCacheHit": 1, "markerAccess": 1])
+        XCTAssertEqual(ProjectAttribution.root(for: directory.path), first)
+    }
     func testOptInBoundaryReadCalibration() throws {
         guard ProcessInfo.processInfo.environment["AMID_SAMPLER_BOUNDARY_PROFILE"] == "1" else {
             throw XCTSkip("Opt-in synthetic numeric sampler instrumentation calibration.")
@@ -60,7 +95,7 @@ final class SamplerProfileTests: XCTestCase {
             profile.begin(.processLoop)
             for _ in 0..<1082 {
                 profile.beginIteration()
-                for stage in [SamplerProfile.Fine.processOS, .attribution, .portsValidation, .construction] { profile.endFine(stage) }
+                for stage in [SamplerProfile.Fine.processOS, .decoding, .application, .project, .portsValidation, .construction] { profile.endFine(stage) }
                 profile.endIteration()
             }
             profile.end(.processLoop)
@@ -69,7 +104,7 @@ final class SamplerProfileTests: XCTestCase {
             XCTAssertEqual(result.fineWall["construction"]?.calls, 1082)
         }
         let timing = measurement.report()
-        let report = Report(samples: 100, iterationsPerSample: 1082, fineBoundaryReads: 541000, coarseCounterReads: 800,
+        let report = Report(samples: 100, iterationsPerSample: 1082, fineBoundaryReads: 757400, coarseCounterReads: 800,
             ownCPUSeconds: timing.cpuSeconds, wallSeconds: timing.wallSeconds,
             scope: "Synthetic empty sampler instrumentation only; one owned current-thread Mach port, 100 samples × 1082 iterations. Includes dictionary accumulation and report construction; no overhead subtraction or application performance claim.")
         let encoder = JSONEncoder(); encoder.outputFormatting = [.prettyPrinted, .sortedKeys]

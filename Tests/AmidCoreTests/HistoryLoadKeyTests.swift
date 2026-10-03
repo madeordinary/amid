@@ -36,11 +36,15 @@ final class HistoryLoadKeyTests: XCTestCase, @unchecked Sendable {
         let provider = CountingLoadKey(key)
         let store = HistoryStore(directory: directory, keyProvider: provider)
         await store.load()
-        let state = await store.state()
-        XCTAssertNil(state.error); XCTAssertGreaterThan(state.aggregates.count, 1)
+        let metadata = await store.metadata()
+        XCTAssertNil(metadata.error); XCTAssertGreaterThan(metadata.aggregateCount, 1)
         XCTAssertEqual(provider.counts.0, 1); XCTAssertEqual(provider.counts.1, 0)
         await store.load()
         XCTAssertEqual(provider.counts.0, 2); XCTAssertEqual(provider.counts.1, 0)
+        // Diagnostic materialization decrypts again without retaining the load key.
+        let state = await store.state()
+        XCTAssertNil(state.error); XCTAssertGreaterThan(state.aggregates.count, 1)
+        XCTAssertEqual(provider.counts.0, 3); XCTAssertEqual(provider.counts.1, 0)
     }
     func testInvalidEnvelopeDoesNotRequestAnyKey() async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent("amid-load-key-\(UUID())")
