@@ -19,6 +19,24 @@ final class HistoryPersistenceIndexTests: XCTestCase, @unchecked Sendable {
     private func chronological(_ state: HistoryState) -> Bool {
         !state.aggregates.indices.dropFirst().contains { state.aggregates[$0-1].start > state.aggregates[$0].start }
     }
+    func testPreviouslyPublishedStateSurvivesInPlaceRollupAndSettingsChange() async throws {
+        let directory = location(); defer { try? FileManager.default.removeItem(at: directory) }
+        let store = HistoryStore(directory: directory, keyProvider: EphemeralHistoryKeyProvider())
+        let now = Date(); let old = now.addingTimeInterval(-30 * 3600)
+        await store.updateSettings(.init(retention: .week, aliases: ["app:a": "Original"]), now: old)
+        await store.ingest(snapshot(old, apps: ["a"]))
+        await store.ingest(snapshot(old.addingTimeInterval(65), apps: ["a"]))
+        let held = await store.state(); let original = try values(held)
+        await store.ingest(snapshot(now, apps: ["b"]))
+        await store.updateSettings(.init(retention: .week, aliases: ["app:a": "Updated"]), now: now)
+        let current = await store.state()
+        XCTAssertEqual(try values(held), original)
+        XCTAssertEqual(held.settings.aliases["app:a"], "Original")
+        XCTAssertEqual(current.settings.aliases["app:a"], "Updated")
+        XCTAssertTrue(held.aggregates.allSatisfy { $0.resolution == 60 })
+        XCTAssertTrue(current.aggregates.contains { $0.entityID == "app:a" && $0.resolution == 3600 })
+        XCTAssertTrue(chronological(current)); XCTAssertNil(current.error)
+    }
     func testUnchangedFlushPreservesOrderValuesAndSubsequentIndexes() async throws {
         let directory = location(); defer { try? FileManager.default.removeItem(at: directory) }
         let key = EphemeralHistoryKeyProvider(); let store = HistoryStore(directory: directory, keyProvider: key)
@@ -209,6 +227,23 @@ extension HistoryPersistenceIndexTests {
             let reloadedState = await reload.state()
             XCTAssertEqual(try values(reloadedState), try values(state))
         } }
+    }
+    func testProjectOnlyPersistedExclusionPurgesAndRewritesOnLoad() async throws {
+        let directory = location(); defer { try? FileManager.default.removeItem(at: directory) }
+        let provider = EphemeralHistoryKeyProvider(); let key = try provider.key(); let now = Date()
+        let minute = Date(timeIntervalSince1970: floor(now.timeIntervalSince1970 / 60) * 60 - 600)
+        let files = try writeFixture(directory, key: key, groups: [[fixtureRow("project:/owned/excluded", start: minute), fixtureRow("project:/owned/kept", start: minute)]])
+        var archive = try manifest(directory, key: key)
+        archive.settings.excludedProjects = ["/owned/excluded"]
+        XCTAssertTrue(archive.settings.excludedApplications.isEmpty)
+        try sealed(JSONEncoder().encode(archive), key: key).write(to: directory.appendingPathComponent("history.aesgcm"))
+        let store = fixedStore(directory, key: provider, now: now); await store.load()
+        let state = await store.state()
+        XCTAssertNil(state.error)
+        XCTAssertEqual(state.aggregates.map(\.entityID), ["project:/owned/kept"])
+        XCTAssertFalse(try XCTUnwrap(manifest(directory, key: key).segmentFiles).contains(files[0]))
+        let reload = fixedStore(directory, key: provider, now: now); await reload.load()
+        let restored = await reload.state(); XCTAssertEqual(try values(restored), try values(state))
     }
     func testExclusionsRewriteOnlyAffectedGeneration() async throws {
         let directory = location(); defer { try? FileManager.default.removeItem(at: directory) }

@@ -1,0 +1,125 @@
+{
+  "date": "2026-10-03",
+  "interpretation": [
+    "Production checkpoint lifetime peaks are sampled through load and flush.",
+    "Whole-test peaks include later heavy fixture validation and cannot be attributed solely to production loading.",
+    "RSS and physical footprint are different metrics; the 150 MiB requirement uses RSS.",
+    "Three changes retained after scoped tests and observed improvement; per-segment pools reverted after negligible/mixed measurements.",
+    "No sustained, loaded-GUI, reference-hardware or 150 MiB acceptance pass."
+  ],
+  "scope": "Separate fresh release core-test processes with copies of one pristine 76-entity/week synthetic fixture; each pair has identical fixed reference, counts and ciphertext sizes. No GUI, live raw ring or user store.",
+  "trials": [
+    {
+      "baseline": {
+        "ciphertextBytes": 70293646,
+        "exitCode": 0,
+        "fixedReference": 812755186,
+        "hourRows": 11020,
+        "loadedPhysicalFootprintBytes": 381240496,
+        "loadedRSSBytes": 426885120,
+        "minuteRows": 108528,
+        "numericEvidenceSHA256": "9096cc68acf1b31b3acaf953ff0e74065d2e445150304c7aedd865b09525702c",
+        "productionCheckpointLifetimePeakRSSBytes": 428720128,
+        "wholeTestLifetimePeakRSSBytes": 430309376
+      },
+      "candidate": {
+        "ciphertextBytes": 70293646,
+        "exitCode": 0,
+        "fixedReference": 812755186,
+        "hourRows": 11020,
+        "loadedPhysicalFootprintBytes": 332661864,
+        "loadedRSSBytes": 378372096,
+        "minuteRows": 108528,
+        "numericEvidenceSHA256": "7bfcfad0df0993097631139e34b3b6629f620da127250089be4d368a082123ad",
+        "productionCheckpointLifetimePeakRSSBytes": 378404864,
+        "wholeTestLifetimePeakRSSBytes": 378404864
+      },
+      "change": "Bucket indexes instead of full-row grouping",
+      "kept": true
+    },
+    {
+      "baseline": {
+        "ciphertextBytes": 70293646,
+        "exitCode": 0,
+        "fixedReference": 812755186,
+        "hourRows": 11020,
+        "loadedPhysicalFootprintBytes": 332727376,
+        "loadedRSSBytes": 378437632,
+        "minuteRows": 108528,
+        "numericEvidenceSHA256": "fcbb2e5e50ce8433415601c64703f64eea6c7ef9ab5700fa89be9fc824cf8e30",
+        "productionCheckpointLifetimePeakRSSBytes": 378470400,
+        "wholeTestLifetimePeakRSSBytes": 378470400
+      },
+      "candidate": {
+        "ciphertextBytes": 70293646,
+        "exitCode": 0,
+        "fixedReference": 812755186,
+        "hourRows": 11020,
+        "loadedPhysicalFootprintBytes": 180470744,
+        "loadedRSSBytes": 226131968,
+        "minuteRows": 108528,
+        "numericEvidenceSHA256": "a871875671be686e001824089e9c85274b132d113f16ca6eab06335f6d6a7486",
+        "productionCheckpointLifetimePeakRSSBytes": 226181120,
+        "wholeTestLifetimePeakRSSBytes": 250691584
+      },
+      "change": "In-place rollup and direct aggregate index",
+      "kept": true
+    },
+    {
+      "baseline": {
+        "ciphertextBytes": 70293646,
+        "exitCode": 0,
+        "fixedReference": 812755186,
+        "hourRows": 11020,
+        "loadedPhysicalFootprintBytes": 180437976,
+        "loadedRSSBytes": 226099200,
+        "minuteRows": 108528,
+        "numericEvidenceSHA256": "85c9d601458b97333b916f9a508374c53ef26292b5da89eaa75b5abb67a55bf8",
+        "productionCheckpointLifetimePeakRSSBytes": 226131968,
+        "wholeTestLifetimePeakRSSBytes": 250642432
+      },
+      "candidate": {
+        "ciphertextBytes": 70293646,
+        "exitCode": 0,
+        "fixedReference": 812755186,
+        "hourRows": 11020,
+        "loadedPhysicalFootprintBytes": 130286528,
+        "loadedRSSBytes": 175980544,
+        "minuteRows": 108528,
+        "numericEvidenceSHA256": "0f70e4a975a5233dfeaee4aab7e98f96a19a699541a62e519d4bc5829f795d1f",
+        "productionCheckpointLifetimePeakRSSBytes": 207945728,
+        "wholeTestLifetimePeakRSSBytes": 245661696
+      },
+      "change": "Skip exclusion mutation when no exclusions exist",
+      "kept": true
+    },
+    {
+      "baseline": {
+        "ciphertextBytes": 70293646,
+        "exitCode": 0,
+        "fixedReference": 812755186,
+        "hourRows": 11020,
+        "loadedPhysicalFootprintBytes": 130433984,
+        "loadedRSSBytes": 176226304,
+        "minuteRows": 108528,
+        "numericEvidenceSHA256": "c8d298e9616fffeb94fd26da8d1d52c3f351796282711f2e86ac16598272794a",
+        "productionCheckpointLifetimePeakRSSBytes": 208158720,
+        "wholeTestLifetimePeakRSSBytes": 245907456
+      },
+      "candidate": {
+        "ciphertextBytes": 70293646,
+        "exitCode": 0,
+        "fixedReference": 812755186,
+        "hourRows": 11020,
+        "loadedPhysicalFootprintBytes": 130433960,
+        "loadedRSSBytes": 176160768,
+        "minuteRows": 108528,
+        "numericEvidenceSHA256": "ad4dddfc9829a66c504532adf7544bec82fb0ac619c30295a21c71e61391b08f",
+        "productionCheckpointLifetimePeakRSSBytes": 207978496,
+        "wholeTestLifetimePeakRSSBytes": 246497280
+      },
+      "change": "Per-segment autorelease pool",
+      "kept": false
+    }
+  ]
+}

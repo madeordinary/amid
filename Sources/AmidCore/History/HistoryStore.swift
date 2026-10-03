@@ -84,7 +84,9 @@ public actor HistoryStore {
         memoryObserver?(.assigned, aggregates.count, 0)
         dirtySegments = archive.version < 3 ? Set(aggregates.map(segmentName)) : Set(archive.aggregates.map(segmentName))
         for value in aggregates where value.requiresPersistenceMigration || excluded(value.entityID) { dirtySegments.insert(segmentName(value)) }
-        aggregates.removeAll { excluded($0.entityID) }
+        if !settings.excludedApplications.isEmpty || !settings.excludedProjects.isEmpty {
+            aggregates.removeAll { excluded($0.entityID) }
+        }
         alerts = archive.alerts; actions = archive.actions; shortened = archive.shortenedByCap; bytes = encrypted.count; failure = nil
         return loadKey
     }
@@ -241,19 +243,28 @@ public actor HistoryStore {
         let cutoff = now.addingTimeInterval(-retention.seconds)
         aggregates.removeAll { $0.start.addingTimeInterval($0.resolution) <= cutoff }
         alerts.removeAll { $0.updatedAt < cutoff }; actions.removeAll { $0.timestamp < cutoff }
-        var hourly: [String:HistoryAggregate] = [:]; var minute: [HistoryAggregate] = []
-        for value in aggregates {
-            guard value.start < now.addingTimeInterval(-86400) else { minute.append(value); continue }
+        var hourly: [String:HistoryAggregate] = [:]
+        aggregates.removeAll { value in
+            guard value.start < now.addingTimeInterval(-86400) else { return false }
             let hour = Date(timeIntervalSince1970:floor(value.start.timeIntervalSince1970 / 3600) * 3600)
             if value.resolution != 3600 || value.start != hour || hasSignedZero(value) { dirtySegments.insert("bucket-\(Int64(hour.timeIntervalSince1970))-3600.aesgcm") }
             let key = value.entityID + ":" + String(hour.timeIntervalSince1970)
             var result = hourly[key] ?? HistoryAggregate(entityID:value.entityID,name:value.name,start:hour,resolution:3600)
             result.cpu.merge(value.cpu); result.memory.merge(value.memory); result.memoryMethods.formUnion(value.memoryMethods); result.cpuObservedSeconds += value.cpuObservedSeconds; result.memoryObservedSeconds += value.memoryObservedSeconds; result.metricCoverageEstimated = result.metricCoverageEstimated || value.metricCoverageEstimated; result.load1.merge(value.load1); result.load5.merge(value.load5); result.load15.merge(value.load15); result.swap.merge(value.swap); result.pressureStates.formUnion(value.pressureStates); result.samples += value.samples; result.observedSeconds += value.observedSeconds; result.gapSeconds += value.gapSeconds; result.cadences.formUnion(value.cadences); result.partial = result.partial || value.partial
             hourly[key] = result
+            return true
         }
-        let changed = hourly.values
-        aggregates = (minute + changed).sorted { $0.start < $1.start }
-        aggregateIndex = Dictionary(uniqueKeysWithValues:aggregates.enumerated().map { ($0.element.id,$0.offset) })
+        aggregates.append(contentsOf: hourly.values)
+        aggregates.sort { $0.start < $1.start }
+        rebuildAggregateIndex()
+    }
+    private func rebuildAggregateIndex() {
+        aggregateIndex.removeAll(keepingCapacity: true)
+        aggregateIndex.reserveCapacity(aggregates.count)
+        for index in aggregates.indices {
+            let replaced = aggregateIndex.updateValue(index, forKey: aggregates[index].id)
+            precondition(replaced == nil)
+        }
     }
     private func save() { guard failure == nil, settings.retention != nil else { return }; do { try persist(); failure = nil } catch { failure = "Encrypted history could not be saved. No plaintext fallback." } }
     private func validateDirectory() throws {
@@ -283,11 +294,12 @@ public actor HistoryStore {
         if let loadKey { key = loadKey } else { key = try keyProvider.key() }
         try FileManager.default.createDirectory(at:directory,withIntermediateDirectories:true,attributes:[.posixPermissions:0o700])
         try FileManager.default.setAttributes([.posixPermissions:0o700],ofItemAtPath:directory.path)
-        var groups = Dictionary(grouping:aggregates,by:segmentName)
+        var groups: [String:[Int]] = [:]
+        for index in aggregates.indices { groups[segmentName(aggregates[index]), default: []].append(index) }
         memoryObserver?(.grouped, aggregates.count, 0)
         for name in groups.keys where segmentPaths[name] == nil { dirtySegments.insert(name) }
         var encodedSegments: [String:Data] = [:]
-        for name in dirtySegments where groups[name] != nil { encodedSegments[name] = try encrypt(groups[name]!,using:key) }
+        for name in dirtySegments where groups[name] != nil { encodedSegments[name] = try encrypt(groups[name]!.map { aggregates[$0] },using:key) }
         memoryObserver?(.encoded, aggregates.count, encodedSegments.count)
         let enabled = settings.retention != .off && settings.retention != nil
         var aggregateMembershipChanged = false
@@ -296,10 +308,10 @@ public actor HistoryStore {
         for name in encodedSegments.keys { paths[name] = String(name.dropLast(7)) + "-" + UUID().uuidString + ".aesgcm" }
         var archive = Archive(settings:settings,aggregates:[],alerts:enabled ? alerts : [],actions:enabled ? actions : [],shortenedByCap:shortened,segmentFiles:groups.keys.compactMap { paths[$0] }.sorted())
         var manifest = try encrypt(archive,using:key)
-        var sizes = groups.mapValues { values in encodedSegments[segmentName(values[0])]?.count ?? segmentSizes[segmentName(values[0])] ?? 0 }
+        var sizes = groups.mapValues { values in encodedSegments[segmentName(aggregates[values[0]])]?.count ?? segmentSizes[segmentName(aggregates[values[0]])] ?? 0 }
         while manifest.count + sizes.values.reduce(0,+) > maxBytes {
             shortened = true
-            if let oldest = groups.keys.min(by: { groups[$0]![0].start < groups[$1]![0].start }) { groups.removeValue(forKey:oldest); sizes.removeValue(forKey:oldest); encodedSegments.removeValue(forKey:oldest); aggregateMembershipChanged = true }
+            if let oldest = groups.keys.min(by: { aggregates[groups[$0]![0]].start < aggregates[groups[$1]![0]].start }) { groups.removeValue(forKey:oldest); sizes.removeValue(forKey:oldest); encodedSegments.removeValue(forKey:oldest); aggregateMembershipChanged = true }
             else if !alerts.isEmpty { alerts.removeFirst() }
             else if !actions.isEmpty { actions.removeFirst() }
             else { throw HistoryStorageError.invalidEnvelope }
@@ -320,8 +332,9 @@ public actor HistoryStore {
         memoryObserver?(.written, aggregates.count, encodedSegments.count)
         // Existing mutations maintain the index; preserve it when persistence changes no rows or order.
         if aggregateMembershipChanged || aggregates.indices.dropFirst().contains(where: { aggregates[$0-1].start > aggregates[$0].start }) {
-            aggregates = groups.values.flatMap { $0 }.sorted { $0.start < $1.start }
-            aggregateIndex = Dictionary(uniqueKeysWithValues:aggregates.enumerated().map { ($0.element.id,$0.offset) })
+            aggregates.removeAll { groups[segmentName($0)] == nil }
+            aggregates.sort { $0.start < $1.start }
+            rebuildAggregateIndex()
         }
         segmentSizes = sizes; segmentPaths = paths.filter { groups[$0.key] != nil }; dirtySegments.removeAll(); bytes = manifest.count + sizes.values.reduce(0,+)
         memoryObserver?(.indexReady, aggregates.count, encodedSegments.count)
