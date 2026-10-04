@@ -4,11 +4,18 @@ Amid is a native, offline Mac activity monitor for applications, development pro
 
 Current battery-state candidate preserves unknown power/charging fields; 196 release tests passed with 10 opt-in skips and 27 C cases, followed by strict ad-hoc packaging. [Evidence and source identity](docs/evidence/battery-state-candidate.md) identify source `d9a6e81`. Native verification remains unobserved after an automation timeout; previous [native subset](docs/evidence/collection-status-native.md) and [sustained budget failure](docs/evidence/collection-status-background.md) retain their earlier executable scope. Performance, remaining native, hardware, beta and signing gates remain open.
 
+For the current candidate and a short list of remaining work, see [What remains](docs/handoff.md#what-remains).
+
+<details>
+<summary>Earlier verification checkpoints</summary>
+
 Previous HistoryRefresh checkpoint: 182 passing release tests, 10 opt-in skips and 27 C cases; strict ad-hoc packaging passed. Native selection was unobserved after the UI-tool timeout; its numeric short report is not a History-render comparison or saving. [Preserved exact scope](docs/evidence/history-refresh-candidate.md). Earlier Counters observations retain their original executable scope.
 
 Previous Counters checkpoint: `build/AmidCounters.app` has **180 passing release tests and nine opt-in skips**, plus 18 interface and nine system C cases, with 103 inputs unchanged through strict ad-hoc packaging. [Counter evidence](docs/evidence/interface-counter-followup.md) and [exact manifest](docs/evidence/interface-counter-candidate-source.json) record the frozen runtime at `8432b3a`. Scoped native Overview/network/pause and [network-denied workflows with exact diagnostic export](docs/evidence/offline-and-traffic.md) were observed; complete GUI acceptance remains open. The test/docs update `8cafd9a` adds a separate [one-test sampler diagnostic](docs/evidence/sampler-instrumentation-overhead.md), which passed with opt-in enabled without changing the runtime or bundle. Menu p95, uninterrupted default-five-second performance and public-release gates remain open.
 
 A scoped [30-day synthetic-history observation](docs/evidence/month-history-native.md) on the unchanged Counters bundle rendered app/project history, preserved selection across Settings and showed a reduced window after retention changed to 24 hours. Loading spinner and responsiveness during pending queries were not observed; an initial empty state resolved after Raise/range selection without a traced cause. This is not a CPU/RSS or sustained-performance pass.
+
+</details>
 
 Source is published as a development preview under MIT. See [repository hygiene](docs/repository-hygiene.md) for tracked files and the clean public history boundary.
 
@@ -93,7 +100,7 @@ A successful build does not establish all PRD gates. The first CPU benchmark use
 
 The [completed uninterrupted full-GUI run](docs/evidence/gui-benchmark-checkpoint-completed.json) measured 1.559615% of one core and peak RSS 160.265625 MiB over 1,803.225 seconds, exceeding both budgets. A [later short candidate](docs/evidence/gui-profile-candidate-180.json) measured 1.193647% and 129.3125 MiB over 184.331 seconds. Different workloads and duration prevent treating it as a sustained pass or attributing the change to one optimization. Its [numeric phase report](docs/evidence/gui-profile-candidate-phases.json) separates current-thread ingestion work from concurrent whole-process cost.
 
-A separate [21-entity, seven-day retained-history loader](docs/evidence/retained-history-memory-21-week-load.json) reached about 207.89 MiB RSS without the GUI or raw ring. That historical all-row loader has been replaced by authenticated bucket paging; [76/350-entity core results](docs/evidence/paged-history-candidate.md) are separate from full-GUI acceptance. No passing sustained full-GUI result or matched reference-hardware baseline exists. The [handoff](docs/handoff.md) and [current HistoryRefresh manifest](docs/evidence/history-refresh-candidate-source.json) distinguish current source from preserved failed runs.
+A separate [21-entity, seven-day retained-history loader](docs/evidence/retained-history-memory-21-week-load.json) reached about 207.89 MiB RSS without the GUI or raw ring. That historical all-row loader has been replaced by authenticated bucket paging; [76/350-entity core results](docs/evidence/paged-history-candidate.md) are separate from full-GUI acceptance. No passing sustained full-GUI result or matched reference-hardware baseline exists. The [handoff](docs/handoff.md) and [current battery-state manifest](docs/evidence/battery-state-candidate-source.json) distinguish current source from preserved failed runs.
 
 - [Short profiling candidate source and executable hashes](docs/evidence/gui-profile-candidate-source.json)
 - [Native acceptance observations](docs/evidence/acceptance-ui-observations.md)
