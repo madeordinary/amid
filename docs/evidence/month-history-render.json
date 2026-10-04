@@ -1,0 +1,82 @@
+{
+  "measurement": {
+    "cpuSeconds": 6.863887999999999,
+    "elapsedSeconds": 183.303409417,
+    "interruptWakeups": 420,
+    "interruptWakeupsPerSecond": 2.291283077253271,
+    "involuntaryContextSwitches": 14334,
+    "meanCPUPercentOneCore": 3.744550099657571,
+    "notes": [
+      "Full GUI with accessible process metadata; 30-second warmup. Temporary encrypted storage obeys monitoring.retention.",
+      "Elapsed time uses ContinuousClock. CPU and context switches are interval getrusage(RUSAGE_SELF) deltas. Peak RSS is a process-lifetime maximum, including startup and warmup. Wakeups are separate own-process libproc interrupt and package-idle counter deltas; neither is a total of all wakeups. Unavailable or regressed counters are unknown."
+    ],
+    "packageIdleWakeups": 10,
+    "packageIdleWakeupsPerSecond": 0.05455435898222074,
+    "peakResidentBytes": 318111744,
+    "voluntaryContextSwitches": 177
+  },
+  "monitoring": {
+    "acceptedSamples": 18,
+    "createdAt": "2026-10-04T02:36:24Z",
+    "elapsedSeconds": 183.303416125,
+    "historySeed": {
+      "actualLoadedAggregates": 161652,
+      "measurementNote": "Synthetic import/startup allocations are included in process-lifetime peak RSS. Import precedes warmup and the measured CPU interval; this is loaded synthetic history, not a normal-store load benchmark.",
+      "provenance": {
+        "anchor": "2026-10-04T02:27:00Z",
+        "ciphertextBytes": 95794824,
+        "ciphertextSHA256": "f8e28e731a7bfdef15023f2a86eb4126d1475463bb0a2f7259b56d8a528429b6",
+        "days": 30,
+        "declaredRecords": 162336,
+        "entities": 76,
+        "manifestSHA256": "34b6bee6d48ac349af7d534b393298b5c09ec4f13ce43a81510f85127ff45d00",
+        "note": "Disposable synthetic fixture re-encrypted with a fresh ephemeral destination key. Import hashes source ciphertext and authenticates/reseals every blob; production load validates aggregate payloads and performs normal maintenance. Declared counts are provenance, not postload counts. Import overhead is not normal-store load overhead."
+      }
+    },
+    "invalidReasons": [],
+    "lastRequestedCadence": 10,
+    "lastSampleElapsed": 177.40979625,
+    "maximumGapSeconds": 10.740683665999995,
+    "maximumRequestedCadence": 10,
+    "measurementStartedAt": "2026-10-04T02:36:55Z",
+    "minimumRequestedCadence": 10,
+    "observedProcessesAtCompletion": 626,
+    "phase": "completed",
+    "presentationMode": "normal",
+    "requestedSeconds": 180,
+    "retention": "month",
+    "statusUpdatedAt": "2026-10-04T02:39:58Z",
+    "unavailableSamples": 0,
+    "warmupSamples": 3
+  },
+  "notes": [
+    "Only monitoring.phase=completed describes a continuous sampling run; this is not a reference-hardware or baseline pass.",
+    "Peak RSS includes startup and warmup. Wakeup counters are separate public own-process counters.",
+    "Status heartbeat writes occur at most once per minute and are included in measured cost.",
+    "History selection/visibility are bracketed operator observations, not a continuous visibility trace. Late displayed counts differ from report completion counts.",
+    "Short loaded-month normal-presentation diagnostic; not pure renderer attribution, hidden/background default5s, sustained30minute or reference/baseline acceptance.",
+    "Synthetic import/startup included in process-lifetime RSS, but precede measured CPU interval.",
+    "AX/screenshot observations and light local documentation work occurred during measurement; no concurrent build, test fixture or generator."
+  ],
+  "candidate": {
+    "executableSHA256": "52d1e49ca7cb1f03903b68f797decd5b1ec60f779a31b2ccd9f30dee0e9b3e6c",
+    "sourceManifest": "interface-counter-candidate-source.json",
+    "runtimeRevision": "8432b3a15b7cee4a266a053a2f6fe3049fbcdda8"
+  },
+  "nativeObservations": {
+    "historySelection": "System / 30 days",
+    "beforeMeasurementObserved": true,
+    "midObservationLocal": "2026-10-03 21:38:08 CDT",
+    "afterCompletedObservationLocal": "2026-10-03 21:42:50 CDT",
+    "afterBuckets": 2127,
+    "afterObservedProcesses": 663,
+    "afterInaccessibleProcesses": 198,
+    "afterEnumeratedProcesses": 862,
+    "afterDisplayedCadenceSeconds": 10.7,
+    "continuousVisibilityTrace": false,
+    "commandQSent": true,
+    "childExitCode": 0,
+    "parentExitCode": 0,
+    "launcherSignalRequested": false
+  }
+}
