@@ -35,7 +35,7 @@ struct HistoryScreen: View {
                 Notice(title: localized("Saved history is off"), detail: localized("Live samples stay in a bounded 15-minute memory ring and are cleared on lock or quit. Choose retention in Settings to begin saving aggregates."))
             }
             if model.shortenedByCap { Notice(title: localized("Storage cap shortened this history"), detail: localized("Amid enforced its 250 MiB cap after retention and rollups. Older aggregates were removed.")) }
-            if model.historyQueryPending && points.isEmpty { ProgressView("Loading history…") }
+            if points.isEmpty && model.historyQueryPending { ProgressView("Loading history…") }
             else if let queryError = model.historyQueryError { Text(verbatim: queryError).foregroundStyle(.secondary) }
             else if points.isEmpty {
                 EmptyState(title: model.settings.retention == .off ? localized("No observations in the memory window") : localized("No saved measurements in this range"), detail: localized("History begins after your choice. Sleep, quit and missing samples are gaps; no earlier activity is reconstructed."), symbol: "clock.arrow.circlepath")

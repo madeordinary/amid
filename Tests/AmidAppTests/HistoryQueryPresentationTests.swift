@@ -1,7 +1,16 @@
 import XCTest
 import Foundation
+import Observation
+import SwiftUI
 @testable import AmidCore
 @testable import AmidApp
+
+private final class HistoryBodyChangeCount: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value = 0
+    func changed() { lock.withLock { value += 1 } }
+    var count: Int { lock.withLock { value } }
+}
 
 final class HistoryQueryPresentationTests: XCTestCase {
     @MainActor
@@ -291,4 +300,73 @@ final class HistoryQueryPresentationTests: XCTestCase {
         XCTAssertTrue(model.inspectorHistoryPoints.isEmpty)
     }
 
+    @MainActor
+    func testLoadedHistoryBodyDoesNotObservePendingOnlyTransition() async {
+        for inspector in [false, true] {
+            let model = model()
+            let entity = inspector ? "app:fixture" : "system"
+            if inspector {
+                model.destination = .applications
+                model.selectedGroupID = "fixture"
+                model.historyEntity = entity
+            }
+            var point = HistoryAggregate(entityID: entity, name: "Owned fixture", start: Date(), resolution: 60)
+            point.cpu.add(20)
+            if inspector {
+                model.inspectorHistoryEntity = entity
+                model.inspectorHistoryPoints = [point]
+            } else { model.aggregates = [point] }
+            let changes = HistoryBodyChangeCount()
+            withObservationTracking {
+                if inspector { _ = GroupHistorySummary(model: model, entityID: entity).body }
+                else { _ = HistoryScreen(model: model).body }
+            } onChange: { changes.changed() }
+            await model.receiveHistoryQuery(entityID: entity, inspector: inspector, revision: 4) { entity, since, until in
+                await Task.yield()
+                XCTAssertTrue(inspector ? model.inspectorHistoryPending : model.historyQueryPending)
+                XCTAssertEqual(inspector ? model.inspectorHistoryPoints.count : model.aggregates.count, 1)
+                XCTAssertEqual(changes.count, 0, "The actual loaded history body must not observe a pending-only transition; inspector=\(inspector).")
+                return HistoryQuery(entityID: entity, since: since, until: until, points: [point], revision: 4, error: nil)
+            }
+            XCTAssertFalse(inspector ? model.inspectorHistoryPending : model.historyQueryPending)
+            XCTAssertEqual(inspector ? model.inspectorHistoryPoints.count : model.aggregates.count, 1)
+            XCTAssertEqual(changes.count, 1, "Positive control: accepted point publication must remain observed; inspector=\(inspector).")
+        }
+    }
+
+    @MainActor
+    func testEmptyHistoryBodyObservesPendingSpinnerTransitions() async {
+        for inspector in [false, true] {
+            let model = model()
+            let entity = inspector ? "app:fixture" : "system"
+            if inspector {
+                model.destination = .applications
+                model.selectedGroupID = "fixture"
+                model.historyEntity = entity
+                model.inspectorHistoryEntity = entity
+            }
+            XCTAssertTrue(inspector ? model.inspectorHistoryPoints.isEmpty : model.aggregates.isEmpty)
+            XCTAssertFalse(inspector ? model.inspectorHistoryPending : model.historyQueryPending)
+            let started = HistoryBodyChangeCount()
+            let completed = HistoryBodyChangeCount()
+            withObservationTracking {
+                if inspector { _ = GroupHistorySummary(model: model, entityID: entity).body }
+                else { _ = HistoryScreen(model: model).body }
+            } onChange: { started.changed() }
+            await model.receiveHistoryQuery(entityID: entity, inspector: inspector, revision: 4) { entity, since, until in
+                await Task.yield()
+                XCTAssertTrue(inspector ? model.inspectorHistoryPending : model.historyQueryPending)
+                XCTAssertEqual(started.count, 1, "An empty history body must observe loading; inspector=\(inspector).")
+                withObservationTracking {
+                    if inspector { _ = GroupHistorySummary(model: model, entityID: entity).body }
+                    else { _ = HistoryScreen(model: model).body }
+                } onChange: { completed.changed() }
+                return HistoryQuery(entityID: entity, since: since, until: until, points: [], revision: 4, error: nil)
+            }
+            XCTAssertFalse(inspector ? model.inspectorHistoryPending : model.historyQueryPending)
+            XCTAssertTrue(inspector ? model.inspectorHistoryPoints.isEmpty : model.aggregates.isEmpty)
+            XCTAssertNil(inspector ? model.inspectorHistoryError : model.historyQueryError)
+            XCTAssertEqual(completed.count, 1, "An empty pending history body must observe completion; inspector=\(inspector).")
+        }
+    }
 }

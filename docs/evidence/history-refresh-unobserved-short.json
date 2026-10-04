@@ -1,0 +1,63 @@
+{
+  "measurement": {
+    "cpuSeconds": 0.7796639999999999,
+    "elapsedSeconds": 188.064102833,
+    "interruptWakeups": 42,
+    "interruptWakeupsPerSecond": 0.2233281065727668,
+    "involuntaryContextSwitches": 1026,
+    "meanCPUPercentOneCore": 0.4145735354355944,
+    "notes": [
+      "Full GUI with accessible process metadata; 30-second warmup. Temporary encrypted storage obeys monitoring.retention.",
+      "Elapsed time uses ContinuousClock. CPU and context switches are interval getrusage(RUSAGE_SELF) deltas. Peak RSS is a process-lifetime maximum, including startup and warmup. Wakeups are separate own-process libproc interrupt and package-idle counter deltas; neither is a total of all wakeups. Unavailable or regressed counters are unknown."
+    ],
+    "packageIdleWakeups": 1,
+    "packageIdleWakeupsPerSecond": 0.005317335870780163,
+    "peakResidentBytes": 132694016,
+    "voluntaryContextSwitches": 36
+  },
+  "monitoring": {
+    "acceptedSamples": 18,
+    "createdAt": "2026-10-04T02:57:34Z",
+    "elapsedSeconds": 188.064120083,
+    "historySeed": {
+      "actualLoadedAggregates": 160056,
+      "measurementNote": "Synthetic import/startup allocations are included in process-lifetime peak RSS. Import precedes warmup and the measured CPU interval; this is loaded synthetic history, not a normal-store load benchmark.",
+      "provenance": {
+        "anchor": "2026-10-04T02:27:00Z",
+        "ciphertextBytes": 95794824,
+        "ciphertextSHA256": "f8e28e731a7bfdef15023f2a86eb4126d1475463bb0a2f7259b56d8a528429b6",
+        "days": 30,
+        "declaredRecords": 162336,
+        "entities": 76,
+        "manifestSHA256": "34b6bee6d48ac349af7d534b393298b5c09ec4f13ce43a81510f85127ff45d00",
+        "note": "Disposable synthetic fixture re-encrypted with a fresh ephemeral destination key. Import hashes source ciphertext and authenticates/reseals every blob; production load validates aggregate payloads and performs normal maintenance. Declared counts are provenance, not postload counts. Import overhead is not normal-store load overhead."
+      }
+    },
+    "invalidReasons": [],
+    "lastRequestedCadence": 10,
+    "lastSampleElapsed": 178.011374,
+    "maximumGapSeconds": 10.693496041000003,
+    "maximumRequestedCadence": 10,
+    "measurementStartedAt": "2026-10-04T02:58:05Z",
+    "minimumRequestedCadence": 10,
+    "observedProcessesAtCompletion": 727,
+    "phase": "completed",
+    "presentationMode": "normal",
+    "requestedSeconds": 180,
+    "retention": "month",
+    "statusUpdatedAt": "2026-10-04T03:01:13Z",
+    "unavailableSamples": 0,
+    "warmupSamples": 3
+  },
+  "notes": [
+    "Only monitoring.phase=completed describes a continuous sampling run; this is not a reference-hardware or baseline pass.",
+    "Peak RSS includes startup and warmup. Wakeup counters are separate public own-process counters.",
+    "Status heartbeat writes occur at most once per minute and are included in measured cost.",
+    "CUA app selection blocked approximately1660seconds then timed out; no native window/History selection was observed. Normal is requested presentationMode, not operator visibility proof.",
+    "This is not a History-render comparison, CPU saving, default5/30minute/reference pass. LifetimeRSS includes synthetic import/startup.",
+    "Launcher900seconddeadline sent one validated audit-tokenSIGTERM successfully; child exit-15 and parent exit0. No GUI Quit observed."
+  ],
+  "candidateExecutableSHA256": "0fffb7601d675b08c3d1dacb01e382fbab47fd3ac5decce0c7136198441cc285",
+  "presentationObserved": false,
+  "historySelectionObserved": false
+}
