@@ -159,6 +159,7 @@ struct OverviewScreen: View {
                             }
                         }
                         SectionHeading(title: localized("Local volumes"), subtitle: localized("APFS volumes may share container capacity. These capacities are never summed."))
+                        if let message = collectionStatusMessage(model.overviewPresentation.system.volumeCollectionStatus, empty: model.overviewPresentation.system.volumes.isEmpty, volumes: true) { Text(message).foregroundStyle(.secondary) }
                         ForEach(model.overviewPresentation.system.volumes) { volume in
                             HStack {
                                 Label(volume.name, systemImage: "internaldrive")
@@ -167,6 +168,7 @@ struct OverviewScreen: View {
                             }.font(.callout).accessibilityElement(children: .combine)
                         }
                         SectionHeading(title: localized("Network interfaces"), subtitle: localized("Interface byte deltas only. Virtual interfaces may overlap; these rates are not added together."))
+                        if let message = collectionStatusMessage(model.overviewPresentation.system.interfaceCollectionStatus, empty: model.overviewPresentation.system.interfaces.isEmpty, volumes: false) { Text(message).foregroundStyle(.secondary) }
                         ForEach(model.overviewPresentation.system.interfaces, id: \.id) { interface in
                             HStack {
                                 Text(interface.id).font(.callout.monospaced())

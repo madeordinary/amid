@@ -169,9 +169,42 @@ public actor Sampler {
         if name == "claude" { return "Claude Code CLI" }
         if name == "gemini" { return "Gemini CLI" }
         if name == "ollama" { return "Ollama" }
-        if name == "python" || name == "python3" || name.hasPrefix("python3.") { return "Python" }
+        let pythonVersion = name.hasPrefix("python3.") && !name.dropFirst(8).isEmpty &&
+            name.dropFirst(8).split(separator: ".", omittingEmptySubsequences: false).allSatisfy {
+                !$0.isEmpty && $0.utf8.allSatisfy { (48...57).contains($0) }
+            }
+        if name == "python" || name == "python3" || pythonVersion { return "Python" }
         if name == "swift" || name == "swift-frontend" { return "Swift" }
         return nil
+    }
+    enum VolumeRead { case notLocal, unavailable, volume(VolumeSnapshot) }
+    static func volumeCollection(urls: [URL]?, read: (URL) -> VolumeRead) -> ([VolumeSnapshot], CollectionStatus) {
+        guard let urls else { return ([], .unavailable) }
+        var rows: [VolumeSnapshot] = []; var failed = false
+        for url in urls {
+            switch read(url) {
+            case .notLocal: break
+            case .unavailable: failed = true
+            case .volume(let row):
+                rows.append(row)
+                if row.capacity == nil || row.available == nil { failed = true }
+            }
+        }
+        return (rows, failed ? (rows.isEmpty ? .unavailable : .partial) : .complete)
+    }
+    func collectInterfaces(time: Double, read: @Sendable (inout [AmidInterface]) -> Int32) -> ([InterfaceSnapshot], CollectionStatus) {
+        var interfaces = [AmidInterface](repeating: AmidInterface(), count: 256)
+        let count = read(&interfaces); var next: [String: (UInt64, UInt64, Double)] = [:]
+        if count < 0 || count > Int32(interfaces.count) { interfaceCounters.removeAll(); return ([], .unavailable) }
+        var output: [InterfaceSnapshot] = []
+        if count > 0 { output = interfaces.prefix(Int(count)).map { item in
+            let name = cString(item.name); var received: Double?; var sent: Double?
+            if let prior = interfaceCounters[name], time > prior.2, item.received >= prior.0, item.sent >= prior.1 { received = Double(item.received - prior.0) / (time - prior.2); sent = Double(item.sent - prior.1) / (time - prior.2) }
+            next[name] = (item.received, item.sent, time)
+            return InterfaceSnapshot(id: name, receivedBytesPerSecond: received, sentBytesPerSecond: sent, isVirtual: !name.hasPrefix("en"))
+        } }
+        interfaceCounters = next
+        return (output, .complete)
     }
     private func collectSystem(time: Double, profile: SamplerProfile?) -> SystemSnapshot {
         profile?.begin(.systemCounters)
@@ -190,21 +223,16 @@ public actor Sampler {
         profile?.end(.systemCounters)
         profile?.begin(.volumes)
         let keys: Set<URLResourceKey> = [.volumeIsLocalKey, .volumeNameKey, .volumeTotalCapacityKey, .volumeAvailableCapacityKey]
-        result.volumes = (FileManager.default.mountedVolumeURLs(includingResourceValuesForKeys: Array(keys), options: [.skipHiddenVolumes]) ?? []).compactMap { url in
-            guard let v = try? url.resourceValues(forKeys: keys), v.volumeIsLocal == true else { return nil }
-            return VolumeSnapshot(id: url.path, name: v.volumeName ?? url.lastPathComponent, capacity: v.volumeTotalCapacity.map { UInt64(max(0, $0)) }, available: v.volumeAvailableCapacity.map { UInt64(max(0, $0)) }, isStartup: url.path == "/", definition: "Volume available capacity; shared APFS capacity can overlap")
+        let volumeResult = Self.volumeCollection(urls: FileManager.default.mountedVolumeURLs(includingResourceValuesForKeys: Array(keys), options: [.skipHiddenVolumes])) { url in
+            guard let v = try? url.resourceValues(forKeys: keys), let local = v.volumeIsLocal else { return .unavailable }
+            guard local else { return .notLocal }
+            return .volume(VolumeSnapshot(id: url.path, name: v.volumeName ?? url.lastPathComponent, capacity: v.volumeTotalCapacity.map { UInt64(max(0, $0)) }, available: v.volumeAvailableCapacity.map { UInt64(max(0, $0)) }, isStartup: url.path == "/", definition: "Volume available capacity; shared APFS capacity can overlap"))
         }
+        result.volumes = volumeResult.0; result.volumeCollectionStatus = volumeResult.1
         profile?.end(.volumes)
         profile?.begin(.interfaces)
-        var interfaces = [AmidInterface](repeating: AmidInterface(), count: 256)
-        let count = amid_interfaces(&interfaces, Int32(interfaces.count)); var next: [String: (UInt64, UInt64, Double)] = [:]
-        if count > 0 { result.interfaces = interfaces.prefix(Int(count)).map { item in
-            let name = cString(item.name); var received: Double?; var sent: Double?
-            if let prior = interfaceCounters[name], time > prior.2, item.received >= prior.0, item.sent >= prior.1 { received = Double(item.received - prior.0) / (time - prior.2); sent = Double(item.sent - prior.1) / (time - prior.2) }
-            next[name] = (item.received, item.sent, time)
-            return InterfaceSnapshot(id: name, receivedBytesPerSecond: received, sentBytesPerSecond: sent, isVirtual: !name.hasPrefix("en"))
-        } }
-        interfaceCounters = next
+        let interfaceResult = collectInterfaces(time: time) { amid_interfaces(&$0, 256) }
+        result.interfaces = interfaceResult.0; result.interfaceCollectionStatus = interfaceResult.1
         profile?.end(.interfaces)
         profile?.begin(.power)
         defer { profile?.end(.power) }

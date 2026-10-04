@@ -117,6 +117,8 @@ public struct BatterySnapshot: Codable, Sendable {
     }
 }
 
+public enum CollectionStatus: String, Codable, Sendable { case complete, partial, unavailable }
+
 public struct SystemSnapshot: Codable, Sendable {
     public var cpuPercent: Double? = nil
     public var loadAverage: [Double] = []
@@ -124,6 +126,8 @@ public struct SystemSnapshot: Codable, Sendable {
     public var memory: MemorySnapshot = .init()
     public var volumes: [VolumeSnapshot] = []
     public var interfaces: [InterfaceSnapshot] = []
+    public var volumeCollectionStatus: CollectionStatus? = nil
+    public var interfaceCollectionStatus: CollectionStatus? = nil
     public var battery: BatterySnapshot? = nil
     public var thermalState: String = "Unknown"
     public init() {}

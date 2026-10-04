@@ -34,3 +34,11 @@ func duration(_ interval: TimeInterval) -> String {
     if seconds < 3600 { return localizedFormat("%ldm", seconds / 60) }
     return localizedFormat("%ldh %ldm", seconds / 3600, (seconds % 3600) / 60)
 }
+
+func collectionStatusMessage(_ status: CollectionStatus?, empty: Bool, volumes: Bool) -> String? {
+    switch status {
+    case .complete: return empty ? localized(volumes ? "No local volumes observed" : "No network interfaces observed") : nil
+    case .partial: return localized(volumes ? "Some volume measurements unavailable" : "Some interface measurements unavailable")
+    case .unavailable, nil: return localized(volumes ? "Volume collection unavailable" : "Interface collection unavailable")
+    }
+}

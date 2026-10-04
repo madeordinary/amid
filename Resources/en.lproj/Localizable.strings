@@ -814,3 +814,10 @@
 
 "Loading history…" = "Loading history…";
 "Selected resource" = "Selected resource";
+
+"No local volumes observed" = "No local volumes observed";
+"No network interfaces observed" = "No network interfaces observed";
+"Some volume measurements unavailable" = "Some volume measurements unavailable";
+"Some interface measurements unavailable" = "Some interface measurements unavailable";
+"Volume collection unavailable" = "Volume collection unavailable";
+"Interface collection unavailable" = "Interface collection unavailable";
