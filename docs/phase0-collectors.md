@@ -1,6 +1,6 @@
 # Collector capability evidence
 
-The collector uses the macOS SDK's public libproc headers, Mach host statistics, Foundation volume metadata, getifaddrs interface counters, IOKit power-source descriptions and Dispatch memory-pressure notifications. It requires no root helper, process task port, Accessibility, Full Disk Access or network connection. The deployment target is macOS 15; only arm64 macOS 27.0.1 has been observed here. Older OS coverage remains unverified.
+The collector uses the macOS SDK's public libproc headers, Mach host statistics, Foundation volume metadata, public IFALLDATA 64-bit interface counters, IOKit power-source descriptions and Dispatch memory-pressure notifications. It requires no root helper, process task port, Accessibility, Full Disk Access or network connection. The deployment target is macOS 15; only arm64 macOS 27.0.1 has been observed here. Older OS coverage remains unverified.
 
 ## Metadata contract
 
@@ -17,7 +17,7 @@ The collector uses the macOS SDK's public libproc headers, Mach host statistics,
 | Memory | Mach VM page categories, physical memory, vm.swapusage | Unknown categories/swap nil; categories are not summed into a diagnosis |
 | Memory pressure | Public Dispatch memory-pressure change notifications | Unknown until a normal/warning/critical event arrives; no undocumented pressure sysctl |
 | Volumes | Foundation mounted local volume capacity and available capacity | Missing metadata nil; shared APFS capacity may overlap |
-| Interfaces | getifaddrs AF_LINK byte counters, per-interface deltas | First/reset/regression nil; virtual classification is a conservative name heuristic (non-en), not hardware proof |
+| Interfaces | public IFALLDATA `ifmibdata.ifmd_data` 64-bit byte counters, per-interface deltas | First/reset/regression nil; virtual classification is a conservative name heuristic (non-en), not hardware proof |
 | Battery/thermal | IOKit internal battery description; ProcessInfo thermal state | Power/thermal metadata refreshes at most once every ten seconds and immediately after baseline reset. No battery means nil; health condition from documented power-source description keys when present, otherwise unavailable; thermal is qualitative, not temperature |
 
 Recognized runtime labels are executable-name facts for Node.js, Python, Swift, Codex CLI, Claude Code CLI, Gemini CLI and Ollama, not claims about agent state or server behavior. Arguments, environments, source/config contents, prompts, credentials and socket payloads are never requested. Bundle grouping reads path metadata only. Marker filenames are `.git`, `Package.swift`, `package.json`, `pyproject.toml`, `Cargo.toml`, and `go.mod`. Marker results are cached only for the current sample, preventing repeated checks for a shared CWD while allowing changes next sample.
@@ -41,3 +41,5 @@ Final collector update (2026-10-02 08:27 local): the uninstrumented collector-on
 A short disposable profiler compared thirty rapid samples of copied collector source on this host. Own-process CPU total fell from 0.923238 seconds to 0.655274 seconds after replacing repeated Foundation path traversal with strings, using `access(F_OK)` for marker existence, and extracting executable basenames without URL construction. Process counts and host conditions varied. These short instrumented comparisons identify a candidate improvement; they do **not** establish the sustained five-second observer budget, reference-M1 performance, or full-GUI overhead. Product code contains no profiling instrumentation. A fresh sustained benchmark of the final integrated build remains required.
 
 Sampler now reports requested cadence separately in `expectedCadence`, including unavailable samples, so consumers can detect delayed sampling even when display cadence records the actual interval. Construction still starts no boot-session read or pressure observer; those begin on the first authorized sample.
+
+Current interface follow-up (2026-10-04 UTC): [full-width counter evidence](evidence/interface-counter-followup.md) records 18 mocked interface cases and a 26-row numeric API-path comparison. Denied/short/overflow replies remain unavailable. Native/minimum-OS and sustained GUI acceptance remain open.

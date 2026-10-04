@@ -1,0 +1,130 @@
+{
+  "schema": 1,
+  "date": "2026-10-04 UTC",
+  "interfaces": {
+    "rowCount": 26,
+    "enumerationKnown": true,
+    "topologyStable": true,
+    "knownRows": 26,
+    "exactDeltaRows": 26,
+    "nonzeroDeltaRows": 1,
+    "boundarySeconds": [
+      0.00012,
+      0.000505
+    ],
+    "nonzeroAnonymousIntervals": [
+      {
+        "productionInterval": {
+          "known": true,
+          "elapsedSeconds": 2.004394,
+          "receivedDelta": 10398,
+          "sentDelta": 10641,
+          "receivedBytesPerSecond": 5187.602837,
+          "sentBytesPerSecond": 5308.836486
+        },
+        "referenceInnerInterval": {
+          "known": true,
+          "elapsedSeconds": 2.004305,
+          "receivedDelta": 10398,
+          "sentDelta": 10641,
+          "receivedBytesPerSecond": 5187.833189,
+          "sentBytesPerSecond": 5309.072222
+        },
+        "referenceOuterInterval": {
+          "known": true,
+          "elapsedSeconds": 2.0044855,
+          "receivedDelta": 10398,
+          "sentDelta": 10641,
+          "receivedBytesPerSecond": 5187.366035,
+          "sentBytesPerSecond": 5308.59415
+        }
+      }
+    ]
+  },
+  "systemCPU": {
+    "schema": 1,
+    "intervals": [
+      {
+        "index": 0,
+        "logicalCores": 15,
+        "productionElapsedSeconds": 2.001353,
+        "previousBracketSeconds": 3.8e-05,
+        "currentBracketSeconds": 0.000129,
+        "production": {
+          "known": true,
+          "busyTicks": 273,
+          "totalTicks": 2996,
+          "percentTotalCapacity": 9.112149533
+        },
+        "referenceInner": {
+          "known": true,
+          "busyTicks": 273,
+          "totalTicks": 2996,
+          "percentTotalCapacity": 9.112149533
+        },
+        "referenceOuter": {
+          "known": true,
+          "busyTicks": 273,
+          "totalTicks": 2996,
+          "percentTotalCapacity": 9.112149533
+        }
+      },
+      {
+        "index": 1,
+        "logicalCores": 15,
+        "productionElapsedSeconds": 2.004781,
+        "previousBracketSeconds": 0.000129,
+        "currentBracketSeconds": 0.000174,
+        "production": {
+          "known": true,
+          "busyTicks": 249,
+          "totalTicks": 2998,
+          "percentTotalCapacity": 8.305537025
+        },
+        "referenceInner": {
+          "known": true,
+          "busyTicks": 249,
+          "totalTicks": 2998,
+          "percentTotalCapacity": 8.305537025
+        },
+        "referenceOuter": {
+          "known": true,
+          "busyTicks": 249,
+          "totalTicks": 2998,
+          "percentTotalCapacity": 8.305537025
+        }
+      },
+      {
+        "index": 2,
+        "logicalCores": 15,
+        "productionElapsedSeconds": 2.003725,
+        "previousBracketSeconds": 0.000174,
+        "currentBracketSeconds": 0.000235,
+        "production": {
+          "known": true,
+          "busyTicks": 225,
+          "totalTicks": 3000,
+          "percentTotalCapacity": 7.5
+        },
+        "referenceInner": {
+          "known": true,
+          "busyTicks": 225,
+          "totalTicks": 3000,
+          "percentTotalCapacity": 7.5
+        },
+        "referenceOuter": {
+          "known": true,
+          "busyTicks": 225,
+          "totalTicks": 3000,
+          "percentTotalCapacity": 7.5
+        }
+      }
+    ],
+    "note": "Descriptive API-path comparison only. Reference inner/outer intervals bracket production reads; percent ratios are not strict bounds. Shared kernel accounting, tick quantization and read skew preclude physical-ground-truth or invented tolerance claims."
+  },
+  "notes": [
+    "Anonymous numeric API-path comparison; names, addresses, process identities and host paths omitted.",
+    "Same kernel accounting; serial skew, tick quantization and differing elapsed intervals are descriptive, not physical ground truth or certified tolerance.",
+    "No traffic generated. Sandbox EPERM is unavailable, not observed zero. No minimum-OS or sustained-GUI acceptance."
+  ]
+}

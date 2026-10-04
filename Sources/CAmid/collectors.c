@@ -8,7 +8,7 @@
 #include <pthread.h>
 #include <arpa/inet.h>
 #include <net/if.h>
-#include <ifaddrs.h>
+#include <net/if_mib.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
@@ -80,9 +80,26 @@ void amid_system(AmidSystem *out) {
 
 }
 int amid_interfaces(AmidInterface *out,int capacity) {
- struct ifaddrs *all; if(getifaddrs(&all)!=0) return -1; int count=0;
- for(struct ifaddrs *a=all;a&&count<capacity;a=a->ifa_next) if(a->ifa_addr&&a->ifa_addr->sa_family==AF_LINK&&a->ifa_data) { struct if_data *d=a->ifa_data; strlcpy(out[count].name,a->ifa_name,64); out[count].received=d->ifi_ibytes; out[count].sent=d->ifi_obytes; count++; }
- freeifaddrs(all); return count;
+ if(!out||capacity<=0) return -1;
+ int mib[6]={CTL_NET,PF_LINK,NETLINK_GENERIC,IFMIB_IFALLDATA,0,IFDATA_GENERAL};
+ size_t size=0;
+ if(sysctl(mib,6,NULL,&size,NULL,0)!=0||size>16*1024*1024||size%sizeof(struct ifmibdata)!=0) return -1;
+ if(size==0) return 0;
+ if(size/sizeof(struct ifmibdata)>(size_t)capacity) return -1;
+ struct ifmibdata *rows=malloc(size); if(!rows) return -1;
+ size_t used=size;
+ if(sysctl(mib,6,rows,&used,NULL,0)!=0||used>size||used%sizeof(*rows)!=0) { free(rows); return -1; }
+ size_t count=used/sizeof(*rows);
+ // Validate the complete reply before publishing any counters.
+ for(size_t i=0;i<count;i++) {
+  if(rows[i].ifmd_name[0]==0||memchr(rows[i].ifmd_name,0,sizeof(rows[i].ifmd_name))==NULL) { free(rows); return -1; }
+  for(size_t j=0;j<i;j++) if(strcmp(rows[i].ifmd_name,rows[j].ifmd_name)==0) { free(rows); return -1; }
+ }
+ for(size_t i=0;i<count;i++) {
+  strlcpy(out[i].name,rows[i].ifmd_name,sizeof(out[i].name));
+  out[i].received=rows[i].ifmd_data.ifi_ibytes; out[i].sent=rows[i].ifmd_data.ifi_obytes;
+ }
+ free(rows); return (int)count;
 }
 
 int amid_own_wakeups(uint64_t *interrupts,uint64_t *package_idle) {
