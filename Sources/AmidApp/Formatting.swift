@@ -17,6 +17,11 @@ func percent(_ value: Double?) -> String {
     guard let value, value.isFinite else { return localized("Unavailable") }
     return (value / 100).formatted(.percent.precision(.fractionLength(1)))
 }
+func batteryPowerDescription(_ battery: BatterySnapshot) -> String {
+    if battery.isCharging == true { return localized("Charging") }
+    guard let onBattery = battery.onBattery else { return localized("Power source unavailable") }
+    return localized(onBattery ? "On battery" : "External power")
+}
 func historyCadence(_ values: Set<Double>) -> String {
     let measured = values.filter { $0.isFinite && $0 > 0 }
     guard let minimum = measured.min(), let maximum = measured.max() else { return localized("Unavailable") }

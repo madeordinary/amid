@@ -109,10 +109,10 @@ public struct InterfaceSnapshot: Codable, Sendable, Identifiable {
 
 public struct BatterySnapshot: Codable, Sendable {
     public var percent: Double?
-    public var isCharging: Bool
-    public var onBattery: Bool
+    public var isCharging: Bool?
+    public var onBattery: Bool?
     public var condition: String
-    public init(percent: Double?, isCharging: Bool, onBattery: Bool, condition: String) {
+    public init(percent: Double?, isCharging: Bool?, onBattery: Bool?, condition: String) {
         self.percent = percent; self.isCharging = isCharging; self.onBattery = onBattery; self.condition = condition
     }
 }

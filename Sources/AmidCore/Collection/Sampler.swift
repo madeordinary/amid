@@ -206,6 +206,21 @@ public actor Sampler {
         interfaceCounters = next
         return (output, .complete)
     }
+    static func internalBatterySnapshot(_ description: [String: Any]) -> BatterySnapshot {
+        let current = description[kIOPSCurrentCapacityKey] as? Double
+        let maximum = description[kIOPSMaxCapacityKey] as? Double
+        let onBattery: Bool?
+        switch description[kIOPSPowerSourceStateKey] as? String {
+        case kIOPSBatteryPowerValue: onBattery = true
+        case kIOPSACPowerValue: onBattery = false
+        default: onBattery = nil
+        }
+        // Foundation can bridge numeric NSNumber values to Bool; IOPS requires CFBoolean.
+        let isCharging = description[kIOPSIsChargingKey].flatMap { value in
+            CFGetTypeID(value as CFTypeRef) == CFBooleanGetTypeID() ? value as? Bool : nil
+        }
+        return BatterySnapshot(percent: current.flatMap { c in maximum.flatMap { $0 > 0 ? c / $0 * 100 : nil } }, isCharging: isCharging, onBattery: onBattery, condition: description[kIOPSBatteryHealthConditionKey] as? String ?? description[kIOPSBatteryHealthKey] as? String ?? "Condition unavailable")
+    }
     private func collectSystem(time: Double, profile: SamplerProfile?) -> SystemSnapshot {
         profile?.begin(.systemCounters)
         var result = SystemSnapshot(); var raw = AmidSystem(); amid_system(&raw)
@@ -243,8 +258,7 @@ public actor Sampler {
         if let info = IOPSCopyPowerSourcesInfo()?.takeRetainedValue(), let sources = IOPSCopyPowerSourcesList(info)?.takeRetainedValue() as? [CFTypeRef] {
             for source in sources {
                 guard let d = IOPSGetPowerSourceDescription(info, source)?.takeUnretainedValue() as? [String: Any], d[kIOPSTypeKey] as? String == kIOPSInternalBatteryType else { continue }
-                let current = d[kIOPSCurrentCapacityKey] as? Double; let maximum = d[kIOPSMaxCapacityKey] as? Double
-                result.battery = BatterySnapshot(percent: current.flatMap { c in maximum.flatMap { $0 > 0 ? c / $0 * 100 : nil } }, isCharging: d[kIOPSIsChargingKey] as? Bool ?? false, onBattery: d[kIOPSPowerSourceStateKey] as? String == kIOPSBatteryPowerValue, condition: d[kIOPSBatteryHealthConditionKey] as? String ?? d[kIOPSBatteryHealthKey] as? String ?? "Condition unavailable")
+                result.battery = Self.internalBatterySnapshot(d)
                 break
             }
         }

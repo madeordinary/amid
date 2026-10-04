@@ -144,7 +144,7 @@ struct OverviewScreen: View {
                         KeyValue(name: localized("Thermal state"), value: model.overviewPresentation.system.thermalState)
                         KeyValue(name: localized("Load · 1 / 5 / 15 min"), value: model.overviewPresentation.system.loadAverage.map { $0.formatted(.number.precision(.fractionLength(2))) }.joined(separator: " / "))
                         if let battery = model.overviewPresentation.system.battery {
-                            KeyValue(name: localized("Battery"), value: "\(percent(battery.percent)) · \(battery.isCharging ? "Charging" : battery.onBattery ? "On battery" : "External power")")
+                            KeyValue(name: localized("Battery"), value: "\(percent(battery.percent)) · \(batteryPowerDescription(battery))")
                             KeyValue(name: localized("Battery health"), value: battery.condition)
                         }
                         SectionHeading(title: localized("Physical memory categories"), subtitle: localized("OS page categories can overlap with process accounting; these are not per-app totals."))

@@ -134,6 +134,9 @@
 /* display labels */
 "Charging" = "Charging";
 
+/* Battery power description */
+"Power source unavailable" = "Power source unavailable";
+
 /* SettingsScreen.swift:130 */
 "Choose export location…" = "Choose export location…";
 
