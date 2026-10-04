@@ -26,3 +26,5 @@ The full-GUI report should include a continuous active-monitoring window; lock/s
 No stack sampling was performed. Measurements used numeric own-process counters and source review; no stack profile is claimed.
 
 Remaining PRD gates: final full-GUI30minute mean≤0.5%, RSS≤150MiB, wakeups and matched baseline variation, separate visible History rendering, warm menu p95≤150ms, reference M1 Air8GB/~1,000processes/threeprojects, newer device/minimumOS/external display/power cases. The collector-only result does not close them.
+
+Current short diagnostic (2026-10-04 UTC): [sampler instrumentation evidence](sampler-instrumentation-overhead.md) reports twelve ABBA samples and numeric calibration without overhead subtraction. It changes no application code and establishes no causal saving or GUI budget pass. The latest Counters GUI attempt ended early at 147.054 seconds/15 samples with requested cadence 10 seconds on battery; it is invalid for the intended 1800-second/default-five-second check. Actual sampled power/thermal readiness, not `pmset` alone, is required before repeating.

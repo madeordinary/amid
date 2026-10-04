@@ -1,0 +1,261 @@
+{
+  "calibration": {
+    "samples": 64,
+    "cpuTotalSeconds": 6.799999999999168e-05,
+    "cpuMeanMicroseconds": 1.0624999999998699,
+    "cpuMaximumMicroseconds": 4.999999999998062
+  },
+  "invalidReasons": [],
+  "notes": [
+    "A=normal, B=profiled; ABBA repeated three times, six samples per path, one retained Sampler and fresh OS reads.",
+    "Outer synchronous actor wrapper starts before profiledSample initialization and uniformly measures both paths. No await inside measured span.",
+    "Two available warmups five seconds apart, then twelve anchored five-second samples over about sixty seconds. Whole-test interval also includes warmups/calibration.",
+    "Calibration reports 64 empty wrappers; no overhead subtraction or budget acceptance.",
+    "Only counts, availability and numeric own-thread/process measurements are serialized; no monitored identities, paths, strings, arguments, environment or payloads.",
+    "Counts describe changing coverage. This short mixed-order diagnostic cannot establish paired causal savings, sustained GUI budget, reference hardware or all-host visibility."
+  ],
+  "process": {
+    "cpuSeconds": 0.40023100000000006,
+    "elapsedSeconds": 65.1634045,
+    "interruptWakeups": 627,
+    "interruptWakeupsPerSecond": 9.621965040209034,
+    "involuntaryContextSwitches": 3945,
+    "meanCPUPercentOneCore": 0.6141959633186447,
+    "notes": [
+      "Whole test-process interval includes warmups, calibration and anchored sampling; measured before JSON encoding.",
+      "Elapsed time uses ContinuousClock. CPU and context switches are interval getrusage(RUSAGE_SELF) deltas. Peak RSS is a process-lifetime maximum, including startup and warmup. Wakeups are separate own-process libproc interrupt and package-idle counter deltas; neither is a total of all wakeups. Unavailable or regressed counters are unknown."
+    ],
+    "packageIdleWakeups": 7,
+    "packageIdleWakeupsPerSecond": 0.10742225722721409,
+    "peakResidentBytes": 33357824,
+    "voluntaryContextSwitches": 168
+  },
+  "readings": [
+    {
+      "available": true,
+      "collectorWall": 0.01795591664267704,
+      "elapsed": 2.95e-05,
+      "enumerated": 842,
+      "inaccessible": 194,
+      "observed": 647,
+      "outerOwnThread": {
+        "cpuSeconds": 0.017959999999999997,
+        "wallSeconds": 0.01799225
+      },
+      "path": "normal"
+    },
+    {
+      "available": true,
+      "collectorWall": 0.030931750021409243,
+      "elapsed": 5.076556542,
+      "enumerated": 842,
+      "inaccessible": 193,
+      "observed": 648,
+      "outerOwnThread": {
+        "cpuSeconds": 0.027870999999999993,
+        "wallSeconds": 0.031078625
+      },
+      "path": "profiled"
+    },
+    {
+      "available": true,
+      "collectorWall": 0.033469124988187104,
+      "elapsed": 10.076422875,
+      "enumerated": 851,
+      "inaccessible": 193,
+      "observed": 657,
+      "outerOwnThread": {
+        "cpuSeconds": 0.023485999999999993,
+        "wallSeconds": 0.033552625
+      },
+      "path": "profiled"
+    },
+    {
+      "available": true,
+      "collectorWall": 0.017993958317674696,
+      "elapsed": 15.076079334,
+      "enumerated": 855,
+      "inaccessible": 193,
+      "observed": 661,
+      "outerOwnThread": {
+        "cpuSeconds": 0.017919000000000018,
+        "wallSeconds": 0.018017167
+      },
+      "path": "normal"
+    },
+    {
+      "available": true,
+      "collectorWall": 0.018204583320766687,
+      "elapsed": 20.077439167,
+      "enumerated": 854,
+      "inaccessible": 193,
+      "observed": 660,
+      "outerOwnThread": {
+        "cpuSeconds": 0.018009999999999998,
+        "wallSeconds": 0.018230083
+      },
+      "path": "normal"
+    },
+    {
+      "available": true,
+      "collectorWall": 0.02747287496458739,
+      "elapsed": 25.076180375,
+      "enumerated": 853,
+      "inaccessible": 193,
+      "observed": 659,
+      "outerOwnThread": {
+        "cpuSeconds": 0.027281,
+        "wallSeconds": 0.027526958
+      },
+      "path": "profiled"
+    },
+    {
+      "available": true,
+      "collectorWall": 0.02955404168460518,
+      "elapsed": 30.072030209,
+      "enumerated": 853,
+      "inaccessible": 193,
+      "observed": 659,
+      "outerOwnThread": {
+        "cpuSeconds": 0.028603999999999997,
+        "wallSeconds": 0.029699584
+      },
+      "path": "profiled"
+    },
+    {
+      "available": true,
+      "collectorWall": 0.021008291631005704,
+      "elapsed": 35.072337417,
+      "enumerated": 853,
+      "inaccessible": 193,
+      "observed": 659,
+      "outerOwnThread": {
+        "cpuSeconds": 0.020597000000000004,
+        "wallSeconds": 0.021045875
+      },
+      "path": "normal"
+    },
+    {
+      "available": true,
+      "collectorWall": 0.023156624985858798,
+      "elapsed": 40.020089667,
+      "enumerated": 854,
+      "inaccessible": 194,
+      "observed": 659,
+      "outerOwnThread": {
+        "cpuSeconds": 0.022895,
+        "wallSeconds": 0.023186417
+      },
+      "path": "normal"
+    },
+    {
+      "available": true,
+      "collectorWall": 0.02833883330458775,
+      "elapsed": 45.071600334,
+      "enumerated": 853,
+      "inaccessible": 193,
+      "observed": 659,
+      "outerOwnThread": {
+        "cpuSeconds": 0.02754999999999999,
+        "wallSeconds": 0.028394709
+      },
+      "path": "profiled"
+    },
+    {
+      "available": true,
+      "collectorWall": 0.017013875010889024,
+      "elapsed": 50.072088334,
+      "enumerated": 845,
+      "inaccessible": 192,
+      "observed": 652,
+      "outerOwnThread": {
+        "cpuSeconds": 0.01675900000000001,
+        "wallSeconds": 0.017082917
+      },
+      "path": "profiled"
+    },
+    {
+      "available": true,
+      "collectorWall": 0.015852083335630596,
+      "elapsed": 55.067888042,
+      "enumerated": 845,
+      "inaccessible": 192,
+      "observed": 652,
+      "outerOwnThread": {
+        "cpuSeconds": 0.015836000000000017,
+        "wallSeconds": 0.015877958
+      },
+      "path": "normal"
+    }
+  ],
+  "requestedCadence": 5,
+  "valid": true,
+  "warmupsAvailable": 2,
+  "pathSummary": {
+    "normal": {
+      "samples": 6,
+      "cpuSeconds": [
+        0.017959999999999997,
+        0.017919000000000018,
+        0.018009999999999998,
+        0.020597000000000004,
+        0.022895,
+        0.015836000000000017
+      ],
+      "cpuMeanMilliseconds": 18.869500000000006,
+      "cpuMedianMilliseconds": 17.984999999999996,
+      "wallMeanMilliseconds": 19.05829166666667,
+      "observedRange": [
+        647,
+        661
+      ],
+      "enumeratedRange": [
+        842,
+        855
+      ],
+      "inaccessibleRange": [
+        192,
+        194
+      ]
+    },
+    "profiled": {
+      "samples": 6,
+      "cpuSeconds": [
+        0.027870999999999993,
+        0.023485999999999993,
+        0.027281,
+        0.028603999999999997,
+        0.02754999999999999,
+        0.01675900000000001
+      ],
+      "cpuMeanMilliseconds": 25.258499999999998,
+      "cpuMedianMilliseconds": 27.415499999999994,
+      "wallMeanMilliseconds": 27.889236333333333,
+      "observedRange": [
+        648,
+        659
+      ],
+      "enumeratedRange": [
+        842,
+        853
+      ],
+      "inaccessibleRange": [
+        192,
+        193
+      ]
+    }
+  },
+  "sourceHashes": {
+    "Tests/AmidCoreTests/SamplerInstrumentationOverheadTests.swift": "bbba3b55e8f312e73c680a69600af0d7b7a2046a8df1bfab085d4fc0f7446188",
+    "Sources/AmidCore/Collection/Sampler.swift": "4a4267d1f28eecc73765439e7bd3d20e344f3c9fe7c48a382172ef833996a8e7",
+    "Sources/AmidCore/Collection/SamplerProfile.swift": "5eb8cfe9375fcf6c25528097a3dcccd6871a87d00b594daaeb1ff1ebbe448133",
+    "Sources/AmidCore/OwnCurrentThreadMeasurement.swift": "5147ab171ac2ebcfc21aa635e05286399e41b650241413a474562048ec574d31",
+    "Sources/AmidCore/PerformanceMeasurement.swift": "525ed26694d65fa3d96862ff5908644801f89b69d96f6aff354a34d664e6c49e",
+    "Sources/CAmid/collectors.c": "48f3d8233f62d1fcacace11aaebb0dadb58da04232d12297e9f1c308b6ab302d"
+  },
+  "testExecutableSHA256": "9bbec6cb5cfa36335d7a0362ea1770bf88f538b44f0a4f72401f635487b021b6",
+  "exitCode": 0,
+  "inputsUnchanged": true,
+  "testDurationSeconds": 65.173,
+  "frozenApplicationExecutableSHA256": "52d1e49ca7cb1f03903b68f797decd5b1ec60f779a31b2ccd9f30dee0e9b3e6c"
+}
