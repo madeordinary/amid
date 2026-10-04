@@ -2,6 +2,8 @@
 
 Observed on arm64 macOS27.0.1 / Xcode27 / Swift6.4 / SDK27.0. No reference-M1, matched no-monitor baseline or wakeup pass is claimed.
 
+Current candidate: the [completed collection-status GUI run](collection-status-background.md) failed both targets (0.7980406% one-core CPU; 155.421875 MiB lifetime RSS). Requested cadence changed from five to ten seconds; synthetic import is included in lifetime RSS. It is not default-five-second/reference or matched-baseline acceptance. No benchmark remains active.
+
 | Run | Scope | Result |
 | --- | --- | --- |
 | Initial 1,800s run | Collector, old raw Mach ticks | INVALID CPU units; preserved in collector-benchmark-invalid-units.json and its explanation. |

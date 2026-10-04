@@ -1,0 +1,72 @@
+{
+  "sourceCommit": "2548bd944687ccb16a9a1bdfee7ac3ed2e40befd",
+  "executableSHA256": "504e8d9bc6cdab42bfc0185211a7931b62bf6691af673c589f72a15679ce4caa",
+  "rawReportSHA256": "536eeda9023d2ab661302817373d69fcc71da9ec5627898002d3b0a00d0ae733",
+  "sourceManifest": "collection-status-candidate-source.json",
+  "publicInputsChecked": 107,
+  "sourceHashMismatches": [],
+  "report": {
+    "measurement": {
+      "cpuSeconds": 14.449248999999998,
+      "elapsedSeconds": 1810.590821209,
+      "interruptWakeups": 5542,
+      "interruptWakeupsPerSecond": 3.0608793191050183,
+      "involuntaryContextSwitches": 33110,
+      "meanCPUPercentOneCore": 0.7980405528816107,
+      "notes": [
+        "Full GUI with accessible process metadata; 30-second warmup. Temporary encrypted storage obeys monitoring.retention.",
+        "Elapsed time uses ContinuousClock. CPU and context switches are interval getrusage(RUSAGE_SELF) deltas. Peak RSS is a process-lifetime maximum, including startup and warmup. Wakeups are separate own-process libproc interrupt and package-idle counter deltas; neither is a total of all wakeups. Unavailable or regressed counters are unknown."
+      ],
+      "packageIdleWakeups": 98,
+      "packageIdleWakeupsPerSecond": 0.054125978576739765,
+      "peakResidentBytes": 162971648,
+      "voluntaryContextSwitches": 1687
+    },
+    "monitoring": {
+      "acceptedSamples": 341,
+      "createdAt": "2026-10-04T04:07:31Z",
+      "elapsedSeconds": 1810.590841417,
+      "historySeed": {
+        "actualLoadedAggregates": 120308,
+        "measurementNote": "Synthetic import/startup allocations are included in process-lifetime peak RSS. Import precedes warmup and the measured CPU interval; this is loaded synthetic history, not a normal-store load benchmark.",
+        "provenance": {
+          "anchor": "2026-10-04T04:06:00Z",
+          "ciphertextBytes": 70783703,
+          "ciphertextSHA256": "a7e05c21664c9941ebabb44b2e2eb75f9414268922feade35e65cce6b2eddcae",
+          "days": 7,
+          "declaredRecords": 120384,
+          "entities": 76,
+          "manifestSHA256": "c4834c7ef2af0b05f5ec794f57b838489fdfab688940aaab6471cb9c2f35e630",
+          "note": "Disposable synthetic fixture re-encrypted with a fresh ephemeral destination key. Import hashes source ciphertext and authenticates/reseals every blob; production load validates aggregate payloads and performs normal maintenance. Declared counts are provenance, not postload counts. Import overhead is not normal-store load overhead."
+        }
+      },
+      "invalidReasons": [],
+      "lastRequestedCadence": 10,
+      "lastSampleElapsed": 1799.927789208,
+      "maximumGapSeconds": 10.67347212499999,
+      "maximumRequestedCadence": 10,
+      "measurementStartedAt": "2026-10-04T04:08:02Z",
+      "minimumRequestedCadence": 5,
+      "observedProcessesAtCompletion": 609,
+      "phase": "completed",
+      "presentationMode": "normal",
+      "requestedSeconds": 1800,
+      "retention": "week",
+      "runID": "B9753071-8C96-45A8-91CF-A580B1F524BB",
+      "statusUpdatedAt": "2026-10-04T04:38:13Z",
+      "unavailableSamples": 0,
+      "warmupSamples": 6
+    },
+    "notes": [
+      "Only monitoring.phase=completed describes a continuous sampling run; this is not a reference-hardware or baseline pass.",
+      "Peak RSS includes startup and warmup. Wakeup counters are separate public own-process counters.",
+      "Status heartbeat writes occur at most once per minute and are included in measured cost."
+    ]
+  },
+  "cleanup": {
+    "childExitCode": 0,
+    "parentExitCode": 0,
+    "launcherSignalRequested": false,
+    "nativeQuitObserved": false
+  }
+}
