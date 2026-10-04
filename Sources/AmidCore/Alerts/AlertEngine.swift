@@ -61,7 +61,7 @@ public actor AlertEngine {
         if discontinuity { suspend(); windows.removeAll(); listenerSince.removeAll(); normalSince = nil }
         var updates: [AlertEvent] = []
         var seen = Set<String>()
-        func observe(_ category: AlertCategory, _ entity: String, _ value: Double?, _ duration: Double, _ method: MemoryMethod = .unavailable, condition: ([Point]) -> Bool, detail: @autoclosure () -> String) {
+        func observe(_ category: AlertCategory, _ entity: String, _ value: Double?, _ duration: Double, _ method: MemoryMethod = .unavailable, condition: ([Point]) -> Bool, recoveryCondition: (([Point]) -> Bool)? = nil, detail: @autoclosure () -> String) {
             let key = category.rawValue + ":" + entity; seen.insert(key)
             guard settings.enabledRules.contains(category), let value, value.isFinite else { windows.removeValue(forKey:key); suspend(category,entity:entity); return }
             var points = windows[key] ?? []
@@ -79,7 +79,7 @@ public actor AlertEngine {
                     event.lastNotificationAt = eligible ? now : lastNotification[key]
                     retained.append(event); updates.append(event)
                 }
-            } else if category != .memoryPressure, (category == .diskCapacity || now.timeIntervalSince(points[0].time) >= duration), let index = retained.lastIndex(where: { $0.category == category && $0.entityID == entity && $0.recoveredAt == nil }), !condition(category == .diskCapacity ? [Point(time:now,value:value,method:method)] : points) { retained[index].observationSuspended = false; retained[index].recoveredAt = now; retained[index].updatedAt = now; retained[index].notificationEligible = false; updates.append(retained[index]) }
+            } else if category != .memoryPressure, (category == .diskCapacity || now.timeIntervalSince(points[0].time) >= duration), let index = retained.lastIndex(where: { $0.category == category && $0.entityID == entity && $0.recoveredAt == nil }), (recoveryCondition?(points) ?? !condition(category == .diskCapacity ? [Point(time:now,value:value,method:method)] : points)) { retained[index].observationSuspended = false; retained[index].recoveredAt = now; retained[index].updatedAt = now; retained[index].notificationEligible = false; updates.append(retained[index]) }
         }
         let pressure = snapshot.system.memory.pressure
         observe(.memoryPressure,"system", pressure == .unknown ? nil : (pressure == .normal ? 0 : 1),60,condition: { $0.allSatisfy { $0.value == 1 } },detail:localized("Warning or critical memory pressure sustained for 60 seconds."))
@@ -108,11 +108,17 @@ public actor AlertEngine {
             let identity = process.id + ":" + process.endpoints.map(\.id).sorted().joined(separator:",")
             listeners.insert(identity)
             if listenerSince[identity] == nil { listenerSince[identity] = now }
-            observe(.lowActivityServer,identity,cpu,1800,condition: { points in
-                guard now.timeIntervalSince(listenerSince[identity] ?? now) >= 7200, points.count > 1 else { return false }
+            func average(_ points: [Point]) -> Double? {
                 var sum = 0.0; var duration = 0.0
                 for i in 1..<points.count { let dt = points[i].time.timeIntervalSince(points[i-1].time); sum += points[i-1].value * dt; duration += dt }
-                return duration > 0 && sum / duration < 1
+                return duration > 0 ? sum / duration : nil
+            }
+            observe(.lowActivityServer,identity,cpu,1800,condition: { points in
+                guard now.timeIntervalSince(listenerSince[identity] ?? now) >= 7200, let value = average(points) else { return false }
+                return value < 1
+            },recoveryCondition: { points in
+                guard let value = average(points) else { return false }
+                return value >= 1
             },detail:localizedFormat("%@: continuously observed native development listener for at least 2 hours; average CPU below 1%% of one core in the last 30 minutes. No client or traffic measurement is implied.",process.name))
         }
         for identity in Array(listenerSince.keys) where !listeners.contains(identity) { listenerSince.removeValue(forKey:identity) }

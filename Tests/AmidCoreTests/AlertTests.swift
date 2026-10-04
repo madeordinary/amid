@@ -138,3 +138,151 @@ extension AlertTests {
     }
 
 }
+
+
+extension AlertTests {
+    func testMemoryGrowthIndependentThresholdsRecoveryAndHourlyCooldown() async throws {
+        let gib: UInt64 = 1_073_741_824
+        // Each threshold independently fails: 1 GiB is only 12.5% of 8 GiB;
+        // 1 GiB minus one byte is below the absolute threshold despite >25% growth.
+        for (initial, growth) in [(8 * gib, gib), (2 * gib, gib - 1)] {
+            let engine = AlertEngine(settings: .init(enabledRules: [.appMemoryGrowth]))
+            for t in stride(from: 0.0, through: 1800, by: 5) {
+                let updates = await engine.evaluate(snapshot(t, memory: initial + UInt64(Double(growth) * t / 1800)))
+                XCTAssertTrue(updates.isEmpty)
+            }
+        }
+        let engine = AlertEngine(settings: .init(enabledRules: [.appMemoryGrowth]))
+        var updates: [AlertEvent] = []
+        for t in stride(from: 0.0, through: 1800, by: 5) {
+            updates = await engine.evaluate(snapshot(t, memory: 4 * gib + UInt64(Double(gib) * t / 1800)))
+            if t < 1800 { XCTAssertTrue(updates.isEmpty) }
+        }
+        let first = try XCTUnwrap(updates.first)
+        XCTAssertEqual(first.updatedAt, Date(timeIntervalSince1970: 1800)); XCTAssertTrue(first.notificationEligible)
+        updates = await engine.evaluate(snapshot(1805, memory: 4 * gib))
+        XCTAssertEqual(updates.first?.recoveredAt, Date(timeIntervalSince1970: 1805))
+        for t in stride(from: 1810.0, through: 3610, by: 5) {
+            updates = await engine.evaluate(snapshot(t, memory: 4 * gib + UInt64(Double(gib) * (t - 1810) / 1800)))
+        }
+        let second = try XCTUnwrap(updates.first)
+        XCTAssertNotEqual(second.id, first.id); XCTAssertFalse(second.notificationEligible)
+        _ = await engine.evaluate(snapshot(3615, memory: 4 * gib))
+        for t in stride(from: 3620.0, through: 5420, by: 5) {
+            updates = await engine.evaluate(snapshot(t, memory: 4 * gib + UInt64(Double(gib) * (t - 3620) / 1800)))
+        }
+        XCTAssertTrue(try XCTUnwrap(updates.first).notificationEligible)
+    }
+
+    func testMemoryMissingRestartsFullThirtyMinuteQualification() async throws {
+        let gib: UInt64 = 1_073_741_824
+        let engine = AlertEngine(settings: .init(enabledRules: [.appMemoryGrowth]))
+        for t in stride(from: 0.0, through: 1790, by: 5) {
+            _ = await engine.evaluate(snapshot(t, memory: 4 * gib + UInt64(Double(gib) * t / 1800)))
+        }
+        _ = await engine.evaluate(snapshot(1795, memory: nil))
+        var updates: [AlertEvent] = []
+        for t in stride(from: 1800.0, through: 3600, by: 5) {
+            updates = await engine.evaluate(snapshot(t, memory: 4 * gib + UInt64(Double(gib) * (t - 1800) / 1800)))
+            if t < 3600 { XCTAssertTrue(updates.isEmpty) }
+        }
+        XCTAssertEqual(try XCTUnwrap(updates.first).startedAt, Date(timeIntervalSince1970: 1800))
+        XCTAssertEqual(updates.first?.updatedAt, Date(timeIntervalSince1970: 3600))
+    }
+
+    func testSwapThresholdMissingRestartRecoveryAndHourlyCooldown() async throws {
+        let gib: UInt64 = 1_073_741_824
+        let below = AlertEngine(settings: .init(enabledRules: [.swapGrowth]))
+        for t in stride(from: 0.0, through: 900, by: 5) {
+            let updates = await below.evaluate(snapshot(t, pressure: .warning, swap: UInt64(Double(gib - 1) * t / 900)))
+            XCTAssertTrue(updates.isEmpty)
+        }
+        let engine = AlertEngine(settings: .init(enabledRules: [.swapGrowth]))
+        for t in stride(from: 0.0, through: 895, by: 5) { _ = await engine.evaluate(snapshot(t, pressure: .warning, swap: gib)) }
+        _ = await engine.evaluate(snapshot(900, pressure: .warning, swap: nil))
+        var updates: [AlertEvent] = []
+        for t in stride(from: 905.0, through: 1805, by: 5) {
+            updates = await engine.evaluate(snapshot(t, pressure: .warning, swap: UInt64(Double(gib) * (t - 905) / 900)))
+            if t < 1805 { XCTAssertTrue(updates.isEmpty) }
+        }
+        XCTAssertEqual(updates.first?.updatedAt, Date(timeIntervalSince1970: 1805)); XCTAssertTrue(try XCTUnwrap(updates.first).notificationEligible)
+        updates = await engine.evaluate(snapshot(1810, pressure: .normal, swap: gib))
+        XCTAssertEqual(updates.first?.recoveredAt, Date(timeIntervalSince1970: 1810))
+        for t in stride(from: 1815.0, through: 2715, by: 5) {
+            updates = await engine.evaluate(snapshot(t, pressure: .critical, swap: UInt64(Double(gib) * (t - 1815) / 900)))
+        }
+        XCTAssertFalse(try XCTUnwrap(updates.first).notificationEligible)
+        _ = await engine.evaluate(snapshot(2720, pressure: .normal, swap: gib))
+        for t in stride(from: 4510.0, through: 5410, by: 5) {
+            updates = await engine.evaluate(snapshot(t, pressure: .warning, swap: UInt64(Double(gib) * (t - 4510) / 900)))
+        }
+        XCTAssertTrue(try XCTUnwrap(updates.first).notificationEligible)
+    }
+
+    func testDiskStrictCustomThresholdMissingRestartRecoveryAndHourlyCooldown() async throws {
+        let threshold: UInt64 = 20 * 1_073_741_824
+        let engine = AlertEngine(settings: .init(enabledRules: [.diskCapacity], diskThresholdBytes: threshold))
+        for t in stride(from: 0.0, through: 300, by: 5) {
+            let updates = await engine.evaluate(snapshot(t, capacity: threshold)); XCTAssertTrue(updates.isEmpty)
+        }
+        for t in stride(from: 305.0, through: 600, by: 5) { _ = await engine.evaluate(snapshot(t, capacity: threshold - 1)) }
+        _ = await engine.evaluate(snapshot(605, capacity: nil))
+        var updates: [AlertEvent] = []
+        for t in stride(from: 610.0, through: 910, by: 5) {
+            updates = await engine.evaluate(snapshot(t, capacity: threshold - 1))
+            if t < 910 { XCTAssertTrue(updates.isEmpty) }
+        }
+        XCTAssertTrue(try XCTUnwrap(updates.first).notificationEligible)
+        updates = await engine.evaluate(snapshot(915, capacity: threshold))
+        XCTAssertEqual(updates.first?.recoveredAt, Date(timeIntervalSince1970: 915))
+        for t in stride(from: 920.0, through: 1220, by: 5) { updates = await engine.evaluate(snapshot(t, capacity: threshold - 1)) }
+        XCTAssertFalse(try XCTUnwrap(updates.first).notificationEligible)
+        _ = await engine.evaluate(snapshot(1225, capacity: threshold))
+        for t in stride(from: 4210.0, through: 4510, by: 5) { updates = await engine.evaluate(snapshot(t, capacity: threshold - 1)) }
+        XCTAssertTrue(try XCTUnwrap(updates.first).notificationEligible)
+    }
+
+    func testLowActivityStrictAverageRecoveryRecurrenceAndMissingListenerRestart() async throws {
+        let engine = AlertEngine(settings: .init(enabledRules: [.lowActivityServer]))
+        for t in stride(from: 0.0, through: 7200, by: 5) {
+            let updates = await engine.evaluate(snapshot(t, cpu: 1, server: true)); XCTAssertTrue(updates.isEmpty)
+        }
+        var updates: [AlertEvent] = []
+        for t in stride(from: 7205.0, through: 9005, by: 5) { updates = await engine.evaluate(snapshot(t, cpu: 0.5, server: true)) }
+        let first = try XCTUnwrap(updates.first); XCTAssertFalse(first.notificationEligible)
+        for t in stride(from: 9010.0, through: 10810, by: 5) { updates = await engine.evaluate(snapshot(t, cpu: 2, server: true)) }
+        let events = await engine.events(); XCTAssertNotNil(events.first { $0.id == first.id }?.recoveredAt)
+        for t in stride(from: 10815.0, through: 12615, by: 5) { updates = await engine.evaluate(snapshot(t, cpu: 0.5, server: true)) }
+        let second = try XCTUnwrap(updates.first)
+        XCTAssertNotEqual(second.id, first.id); XCTAssertFalse(second.notificationEligible)
+        _ = await engine.evaluate(snapshot(12620, cpu: nil, server: true))
+        for t in stride(from: 12625.0, through: 19825, by: 5) {
+            updates = await engine.evaluate(snapshot(t, cpu: 0.5, server: true))
+            if t < 19825 { XCTAssertTrue(updates.isEmpty) }
+        }
+        let resumed = try XCTUnwrap(updates.first)
+        XCTAssertEqual(resumed.id, second.id)
+        XCTAssertEqual(resumed.updatedAt, Date(timeIntervalSince1970: 19825))
+        XCTAssertNil(resumed.recoveredAt); XCTAssertFalse(resumed.observationSuspended)
+        XCTAssertFalse(resumed.notificationEligible)
+    }
+}
+
+
+extension AlertTests {
+    func testLowActivityKnownHighCPURecoversAfterMissingWithoutTwoHourRequalification() async throws {
+        let engine = AlertEngine(settings: .init(enabledRules: [.lowActivityServer]))
+        var updates: [AlertEvent] = []
+        for t in stride(from: 0.0, through: 7200, by: 5) { updates = await engine.evaluate(snapshot(t, cpu: 0.5, server: true)) }
+        let id = try XCTUnwrap(updates.first).id
+        _ = await engine.evaluate(snapshot(7205, cpu: nil, server: true))
+        for t in stride(from: 7210.0, through: 9010, by: 5) {
+            updates = await engine.evaluate(snapshot(t, cpu: 1, server: true))
+            if t < 9010 { XCTAssertTrue(updates.isEmpty) }
+        }
+        let recovered = try XCTUnwrap(updates.first)
+        XCTAssertEqual(recovered.id, id)
+        XCTAssertEqual(recovered.recoveredAt, Date(timeIntervalSince1970: 9010))
+        XCTAssertFalse(recovered.observationSuspended); XCTAssertFalse(recovered.notificationEligible)
+    }
+}

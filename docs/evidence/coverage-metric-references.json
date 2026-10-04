@@ -1,0 +1,108 @@
+{
+  "CPU_UNIT_EVIDENCE": {
+    "elapsedSeconds": 1.1157610416412354,
+    "expectedPercent": 99.70772938653258,
+    "measuredPercent": 99.88190731675813,
+    "referenceSeconds": 1.1125
+  },
+  "OWNED_ENOSPC": {
+    "committedFiles": 2,
+    "fillerBytes": 65490944,
+    "fillerErrno": 28,
+    "recoveredRecords": 1
+  },
+  "OWNED_MEMORY_REFERENCE": {
+    "afterFootprint": 68501936,
+    "afterRSS": 68927488,
+    "allocationBytes": 67108864,
+    "allowanceBytes": 1048576,
+    "beforeFootprint": 68485552,
+    "beforeRSS": 68911104,
+    "expectedOwners": 1,
+    "measuredFootprint": 68501936,
+    "observedOwners": 1
+  },
+  "notes": [
+    "Final-suite CPU/current-memory/ENOSPC markers are numeric-only. System-tool comparison predates the alert recovery change; collector inputs were unchanged.",
+    "Footprint uses proc_pid_rusage versus child self task_info with a predeclared 1MiB boundary allowance; they share underlying kernel accounting. Current RSS and peak RSS are different measures.",
+    "Filler ENOSPC is observed; the store exposes generic failure. Image cleanup completed; no APFS/power-loss or failure-cleanup proof."
+  ],
+  "systemComparison": {
+    "after": {
+      "endMonotonic": 2.314707916,
+      "loadAverageRounded": [
+        1.67,
+        2.38,
+        2.72
+      ],
+      "memoryBytes": {
+        "active": 6430064640,
+        "compressed": 7328333824,
+        "free": 156860416,
+        "inactive": 6402555904,
+        "physical": 25769803776,
+        "swapUsedRounded": 13530174586.88,
+        "wired": 4489265152
+      },
+      "pageBytes": 16384,
+      "startMonotonic": 2.299246375,
+      "startupDFBytes": {
+        "available": 255312904192,
+        "capacity": 994610155520
+      },
+      "vmReadSeconds": 0.004332875000000236
+    },
+    "before": {
+      "endMonotonic": 0.0338015,
+      "loadAverageRounded": [
+        1.67,
+        2.38,
+        2.72
+      ],
+      "memoryBytes": {
+        "active": 6397689856,
+        "compressed": 7261896704,
+        "free": 115310592,
+        "inactive": 6393741312,
+        "physical": 25769803776,
+        "swapUsedRounded": 13530174586.88,
+        "wired": 4634640384
+      },
+      "pageBytes": 16384,
+      "startMonotonic": 0.021788416,
+      "startupDFBytes": {
+        "available": 255312982016,
+        "capacity": 994610155520
+      },
+      "vmReadSeconds": 0.0026588329999999993
+    },
+    "observed": {
+      "collectionSeconds": 0.030073333298787475,
+      "loadAverage": [
+        1.6728515625,
+        2.3798828125,
+        2.71923828125
+      ],
+      "memoryBytes": {
+        "active": 6428491776,
+        "compressed": 7328514048,
+        "free": 153960448,
+        "inactive": 6408323072,
+        "physical": 25769803776,
+        "pressure": "unknown",
+        "swapUsed": 13530169344,
+        "wired": 4489510912
+      },
+      "startupVolumeBytes": {
+        "available": 255312904192,
+        "capacity": 994610155520,
+        "definition": "Volume available capacity; shared APFS capacity can overlap"
+      },
+      "timestamp": "2026-10-04T00:23:01Z"
+    },
+    "observedAtUTC": "2026-10-04T00:23:01.596183+00:00",
+    "probeElapsedSeconds": 2.2652687080000002,
+    "probeSHA256": "2b925b4097b82827c5fa2312554eec5748ab349c0899d405568736312747624d",
+    "scope": "One current-host numeric tool cross-check. Serial reads are not atomic; dynamic offsets are descriptive. sysctl swap/load are rounded. No system CPU, interface-rate, pressure-transition, external-volume, minimum-OS or reference-hardware acceptance claim."
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "candidate": {
+    "bundle": "build/AmidHistoryLoading.app",
+    "executableSHA256": "9961bb664f15276868d06400a8f2c45452b1d5782e697ab9fee08a632cf409df",
+    "sourceFingerprint": "74a21d4d5a19106979b580491778ef2ed766274aaa8db37f45b59ad593625ddb"
+  },
+  "measurement": {
+    "cpuSeconds": 7.204637,
+    "elapsedSeconds": 1800.3445515,
+    "interruptWakeups": 2133,
+    "interruptWakeupsPerSecond": 1.1847732136733715,
+    "involuntaryContextSwitches": 22148,
+    "meanCPUPercentOneCore": 0.4001810094627322,
+    "notes": [
+      "Full GUI with accessible process metadata; 30-second warmup. Temporary encrypted storage obeys monitoring.retention.",
+      "Elapsed time uses ContinuousClock. CPU and context switches are interval getrusage(RUSAGE_SELF) deltas. Peak RSS is a process-lifetime maximum, including startup and warmup. Wakeups are separate own-process libproc interrupt and package-idle counter deltas; neither is a total of all wakeups. Unavailable or regressed counters are unknown."
+    ],
+    "packageIdleWakeups": 52,
+    "packageIdleWakeupsPerSecond": 0.028883360108305355,
+    "peakResidentBytes": 153419776,
+    "voluntaryContextSwitches": 3183
+  },
+  "monitoring": {
+    "acceptedSamples": 123,
+    "createdAt": "2026-10-03T23:49:57Z",
+    "elapsedSeconds": 1800.344733958,
+    "historySeed": {
+      "actualLoadedAggregates": 118560,
+      "measurementNote": "Synthetic import/startup allocations are included in process-lifetime peak RSS. Import precedes warmup and the measured CPU interval; this is loaded synthetic history, not a normal-store load benchmark.",
+      "provenance": {
+        "anchor": "2026-10-03T23:25:00Z",
+        "ciphertextBytes": 70783703,
+        "ciphertextSHA256": "018464c4e8e707fc93e7536ffdd856c31129aeac784935c865e4932458e1f1ec",
+        "days": 7,
+        "declaredRecords": 120384,
+        "entities": 76,
+        "manifestSHA256": "8869d020871b90d78341412d1e3842ebfc7f3d5c75178cab74df90172b82b8b6",
+        "note": "Disposable synthetic fixture re-encrypted with a fresh ephemeral destination key. Import hashes source ciphertext and authenticates/reseals every blob; production load validates aggregate payloads and performs normal maintenance. Declared counts are provenance, not postload counts. Import overhead is not normal-store load overhead."
+      }
+    },
+    "invalidReasons": [
+      "Monitoring suspended: screen"
+    ],
+    "lastRequestedCadence": 10,
+    "lastSampleElapsed": 1266.17205575,
+    "maximumGapSeconds": 10.731623500000069,
+    "maximumRequestedCadence": 10,
+    "measurementStartedAt": "2026-10-03T23:50:29Z",
+    "minimumRequestedCadence": 10,
+    "observedProcessesAtCompletion": 666,
+    "phase": "invalid",
+    "presentationMode": "normal",
+    "requestedSeconds": 1800,
+    "retention": "week",
+    "runID": "1DDA4EB7-6F86-4C5F-8F9F-6D2DB1444230",
+    "statusUpdatedAt": "2026-10-04T00:20:29Z",
+    "unavailableSamples": 0,
+    "warmupSamples": 3
+  },
+  "notes": [
+    "Only monitoring.phase=completed describes a continuous sampling run; this is not a reference-hardware or baseline pass.",
+    "Peak RSS includes startup and warmup. Wakeup counters are separate public own-process counters.",
+    "Status heartbeat writes occur at most once per minute and are included in measured cost.",
+    "INVALID: screen suspension after 123 accepted samples; the 1800-second report includes suspended time and cannot pass continuous CPU/RSS acceptance.",
+    "Release tests began after invalidation while the app remained suspended. Later counter totals are not an isolated workload or active-monitoring estimate.",
+    "Requested cadence was ten seconds in battery mode; not the five-second default/reference protocol. No matched no-Amid baseline.",
+    "Runtime/build inputs and frozen executable were unchanged through the attempted run. Subsequent low-activity alert source changes belong to a separate candidate."
+  ]
+}
