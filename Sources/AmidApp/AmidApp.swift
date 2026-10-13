@@ -18,7 +18,7 @@ struct AmidApplication: App {
             CommandGroup(replacing: .newItem) {}
             CommandMenu("Monitor") {
                 Button(model.paused ? localized("Resume Monitoring") : localized("Pause Monitoring")) { model.togglePause() }
-                    .keyboardShortcut("p", modifiers: [.command, .shift])
+                    .keyboardShortcut("p", modifiers: [.command, .shift]).disabled(model.settingsLoading)
                 Button("Refresh Now") { Task { await model.refresh() } }
                     .keyboardShortcut("r", modifiers: .command)
                 Divider()

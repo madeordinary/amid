@@ -48,7 +48,7 @@ struct MenuPanel: View {
             HStack {
                 Button("Open Amid") { openWindow(id: "main"); NSApplication.shared.activate(ignoringOtherApps: true) }.buttonStyle(.borderedProminent).keyboardShortcut("o")
                 Spacer()
-                Button(model.paused ? localized("Resume") : localized("Pause")) { model.togglePause() }.disabled(model.settings.retention == nil)
+                Button(model.paused ? localized("Resume") : localized("Pause")) { model.togglePause() }.disabled(model.settings.retention == nil || model.settingsLoading)
                 Button("Quit") { NSApplication.shared.terminate(nil) }.keyboardShortcut("q")
             }
         }.padding(20).frame(width: 360)

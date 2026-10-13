@@ -107,7 +107,7 @@ struct SettingsScreen: View {
                 Text("System CPU is a share of total logical capacity. Application CPU uses 100% per logical core and can exceed 100%. Physical footprint is preferred; RSS fallback is labeled. Memory pressure drives warnings, not RAM fullness.")
                 Text("Local volumes are shown individually; shared APFS capacities are never added. Virtual network interfaces can overlap. GPU, temperatures, per-app I/O and container internals are outside this build's coverage.")
             }.font(.callout)
-        }.formStyle(.grouped)
+        }.formStyle(.grouped).disabled(model.settingsLoading)
             .sheet(isPresented: $showDiagnostics) { DiagnosticsScreen(model: model) }
             .confirmationDialog("Clear app-managed history?", isPresented: $clearConfirm, titleVisibility: .visible) {
                 Button("Clear History", role: .destructive) { Task { await model.clearHistory() } }

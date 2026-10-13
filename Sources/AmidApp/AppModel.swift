@@ -93,6 +93,8 @@ final class AppModel {
     private var generation = 0
     private var settingsRevision = 0
     private var savingSettings = false
+    // True while saved settings load; the draft holds only defaults until importSavedSettings().
+    private(set) var settingsLoading = false
     private var clearingHistory = false
     var sleeping = false
     var locked: Bool { sessionInactive || screenLocked }
@@ -173,6 +175,7 @@ final class AppModel {
     }
     func start() async {
         guard !started else { return }; started = true
+        settingsLoading = true
         let directory: URL
         if case .invalid = seedRequest { failVerificationStartup(); return }
         if case let .configured(source, hash) = seedRequest {
@@ -194,9 +197,8 @@ final class AppModel {
             directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("Amid", isDirectory: true)
             store = HistoryStore(directory: directory)
         }
-        let loadingRevision = settingsRevision
         if verificationSeedEvidence == nil { await store?.load() }
-        await syncStore(importSettingsAt: loadingRevision)
+        await importSavedSettings()
         showOnboarding = settings.retention == nil
         await configureAlerts()
         await alerts.restore(events: alertEvents)
@@ -295,6 +297,7 @@ final class AppModel {
         }
     }
     func acceptHistory(_ retention: HistoryRetention) async {
+        guard !settingsLoading else { return }
         settings.retention = retention
         await saveSettings()
         showOnboarding = false
@@ -339,6 +342,8 @@ final class AppModel {
         savingSettings = true
         defer { savingSettings = false }
         repeat {
+            // Never write a pre-load draft over saved settings; the pending import replaces it.
+            guard !settingsLoading else { break }
             let revision = settingsRevision
             let requested = settings
             await store?.updateSettings(requested)
@@ -386,13 +391,18 @@ final class AppModel {
         default: return nil
         }
     }
-    private func syncStore(importSettingsAt revision: Int? = nil) async {
+    /// Saved settings always replace the pre-load draft; settings writers are refused until then.
+    private func importSavedSettings() async {
+        if let state = await store?.metadata() { settings = state.settings }
+        settingsLoading = false
+        await syncStore()
+    }
+    private func syncStore() async {
         guard !clearingHistory, !quitting else { return }
         let activeGeneration = generation
         markHistoryPresentationPending()
         guard let state = await store?.metadata() else { return }
         guard activeGeneration == generation, !clearingHistory, !quitting else { return }
-        if let revision, settingsRevision == revision { settings = state.settings }
         alertEvents = state.alerts.filter { $0.dismissedAt == nil && !dismissedAlertIDs.contains($0.id) }.sorted { $0.updatedAt > $1.updatedAt }
         storageBytes = state.storageBytes; shortenedByCap = state.shortenedByCap; error = state.error.map { localized($0) }
         guard historyPresentationAllowed else { return }
@@ -490,6 +500,7 @@ final class AppModel {
         return points
     }
     func togglePause() {
+        guard !settingsLoading else { return }
         benchmarkSession?.invalidate("Monitoring pause changed during the run.")
         generation += 1
         settings.paused.toggle()
@@ -503,11 +514,13 @@ final class AppModel {
         }
     }
     func setAlias(_ id: String, value: String) {
+        guard !settingsLoading else { return }
         let name = String(value.trimmingCharacters(in: .whitespacesAndNewlines).prefix(100))
         if name.isEmpty { settings.aliases.removeValue(forKey: id) } else { settings.aliases[id] = name }
         Task { await saveSettings() }
     }
     func exclude(_ id: String, projects: Bool, excluded: Bool) {
+        guard !settingsLoading else { return }
         if projects { if excluded { settings.excludedProjects.insert(id) } else { settings.excludedProjects.remove(id) } }
         else { if excluded { settings.excludedApplications.insert(id) } else { settings.excludedApplications.remove(id) } }
         Task { await saveSettings() }
@@ -531,9 +544,9 @@ final class AppModel {
         await syncStore()
     }
     func retryStore() async {
-        let loadingRevision = settingsRevision
+        settingsLoading = true
         await store?.load()
-        await syncStore(importSettingsAt: loadingRevision)
+        await importSavedSettings()
         await configureAlerts()
         await alerts.restore(events: alertEvents)
     }
@@ -569,6 +582,7 @@ final class AppModel {
         return result
     }
     func notifications(_ enabled: Bool) async {
+        guard !settingsLoading else { return }
         if enabled {
             do {
                 let allowed = try await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])
@@ -579,6 +593,7 @@ final class AppModel {
         } else { settings.notificationsEnabled = false; await saveSettings() }
     }
     func launchAtLogin(_ enabled: Bool) async {
+        guard !settingsLoading else { return }
         do {
             if enabled { try SMAppService.mainApp.register() } else { try await SMAppService.mainApp.unregister() }
             settings.launchAtLogin = enabled; await saveSettings()

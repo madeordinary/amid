@@ -34,6 +34,7 @@ struct MainWindow: View {
                     Spacer()
                     if model.isVerification { Text("VERIFICATION").font(.caption2.weight(.semibold)).padding(7).background(.quaternary, in: Capsule()) }
                     Button { model.togglePause() } label: { Image(systemName: model.paused ? "play" : "pause") }
+                        .disabled(model.settingsLoading)
                         .help(model.paused ? "Resume monitoring" : "Pause monitoring")
                         .accessibilityLabel(model.paused ? "Resume monitoring" : "Pause monitoring")
                     Button { Task { await model.refresh() } } label: { Image(systemName: "arrow.clockwise") }
