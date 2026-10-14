@@ -1,0 +1,38 @@
+# Vitals feature plan — independent review
+
+On 2026-10-04, the owner requested a Claude Code Fable 5.1 review at xhigh of the [feature plan](vitals-inspired-plan.md) and next steps. Claude Code 2.1.289 completed one read-only review with exit 0. Response metadata identifies `claude-fable-5-1`; the invocation used `--effort xhigh`. There were no permission denials.
+
+The reviewer received a frozen copy of selected public source/tests/docs at `9a7594f` and the draft plan with SHA256 `0823512e2e1663277e42df4cf926cd6d688c80e4e5387af91803a69189444a75`. Only Read, Glob and Grep were available; customizations, MCP access, command execution and write tools were disabled. No tests, native observations, commits or pushes were performed by the reviewer. Raw output and the exact reviewed draft are preserved locally. This report and subsequent status annotations were written afterward.
+
+## Verdict: REVISE
+
+Fable supports the five-feature scope and two batches. It recommends correcting preference safety and navigation details before implementation, and making the menu/layout choices explicit. This is a plan verdict, not an application acceptance result.
+
+## Findings checked against source
+
+1. **Settings-load race: source-supported risk, not reproduced.** `AppModel.start()` records a settings revision before awaiting load (`Sources/AmidApp/AppModel.swift:197`). `syncStore` imports saved settings only if the revision is unchanged (line 395). The main-window Pause control is enabled during startup (`MainWindow.swift:36`); `togglePause` changes settings and later saves them (`AppModel.swift:492`). Settings with nil retention clear the store’s in-memory catalog during enforcement (`HistoryStore.swift:411`). The nil-retention save itself returns early (line 466), but a subsequent accepted retention choice can commit an empty manifest and remove obsolete bucket files (lines 496–522). Reproduce this sequence with an owned temporary store and a controlled load barrier before claiming a defect or fix. New preference writers must not expand this exposure.
+   *Status 2026-10-13: reproduced and fixed at `df61fae`.* Two load-barrier regressions on a disposable encrypted store failed before the fix; reopening the store found zero retained aggregates and the saved alias lost. Saved settings now always replace the pre-load draft, and settings writers are refused while loading. Details: [settings-load race evidence](evidence/settings-load-race.md).
+2. **Display-only preferences should not invalidate History queries.** Every settings assignment changes `settingsRevision` (`AppModel.swift:19`), while pending query replies require that revision to match (line 447). Every current store settings save clears the query cache, increments the store revision and enforces retention (`HistoryStore.swift:225–244`). Add regressions for unchanged loaded/pending History when a pin, opening preference or layout is saved. Any correction must preserve retention/exclusion invalidation and commit durability.
+3. **Favorites must not distort rankings.** Overview is headed “Largest observed applications” (`MainWindow.swift:97`). Keep memory-ranked collections unchanged; use pinned-first ordering in app/project lists and separate bounded Favorites sections in Overview/menu. Refuse persistent pins for `process:` fallback IDs (`Collection/Sampler.swift:156–163`), preserve pins through Clear History as preferences, and omit them from diagnostics.
+4. **Search needs explicit destinations.** App/project results can use `openGroup`; process and listener results can open the existing process inspector via `selectedProcess` (`MainWindow.swift:73`). Compute a capped search result set from current accepted state while the search surface is open, hold selection by identity, re-resolve on activation and reset on privacy transitions. Do not add a process destination or asynchronous search service without need.
+5. **Opening preferences need exact triggers.** Apply on ordinary launch/new-window opening, with explicit entity navigation taking precedence. Do not reset the destination when merely unhiding or restoring the window. Possible duplicate windows remain a native question, not a confirmed defect; verify before replacing the scene architecture.
+6. **Readouts/layout need tighter contracts.** Add each batch’s preferences when needed, keep compatible raw identifiers and defaults, preserve the icon-only observation optimization, precompute compact labels at sample publication, and retain only bounded numeric graph points. Define the offered memory fields, interface selection, stale states, hideable sections and fixed warnings. Commit layout reorders at completed moves, not every drag update.
+
+## Recommendations that need qualification
+
+- Fable suggested panel-only sparklines first and treating compact/card density as optional. Earlier discussion offered menu-bar graphs and compact layouts, so those cannot silently disappear. Keep these as explicit batch-two decisions.
+- Multiple status items do not inherently require an AppKit rewrite; the reviewer correctly notes that additional SwiftUI menu scenes are possible. The one-item proposal is a scope choice. Detailed rendering/API feasibility was not tested in this review.
+- Fable’s recommendation to save last-used only at quit is an implementation suggestion. Account for abrupt termination and preserve the intended persistence behavior before adopting it literally.
+- Fable’s proposed “green suite, package, delivered checklist” stopping point describes an implementation handoff only. Actual feature and PRD acceptance still requires the missing native observations.
+- Its “two fix attempts, then defer” suggestion must not authorize shipping a known data-loss or unsafe-action defect. Escalate an unresolved blocking defect, preserve evidence and label the batch incomplete.
+- Fable recommends a local-alpha performance exception. That is advice; only the owner can approve it. The existing targets and failed benchmark remain unchanged.
+
+## Recommended next steps
+
+1. Amend batch one with the verified planning corrections above. First add a deterministic reproduction for the startup preference race using disposable encrypted storage; fix it if demonstrated before adding new preference writers. *Done 2026-10-13 (`df61fae`).*
+2. Start a fresh GPT-6.1 sol session in the same Amid project, scoped to preferences, favorites, unified search and opening-view behavior. Preserve the current candidate. This review does not itself create that session or authorize weakening acceptance.
+3. Finish focused regressions, one appropriate full integration run and an identified ad-hoc package. Deliver a short native checklist for either reliable automation or genuine owner observation. Record who observed what, the exact source and the outcome. Do not count a checklist as a passed test.
+4. Keep feature work bounded. Run no open-ended optimization effort; investigate only demonstrated regressions caused by the feature work. Preserve the separate PRD performance gate. Stop for an implementation handoff or a specific unresolved blocker with evidence, not a fabricated completion claim.
+5. Settle batch-two presentation before building it: one item with several readouts versus separate items; graph placement; and card/compact layouts on the window, panel or both. Retain the requested features unless the owner explicitly narrows them.
+
+The roughly fifteen-minute owner checklist proposed by Fable is a suggested per-batch smoke check, not a promise that full accessibility, lifecycle, privacy or performance acceptance fits that duration. Minimum/reference hardware, two-week beta and signing/notarization remain separate release gates.
