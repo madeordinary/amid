@@ -16,6 +16,6 @@
 
 ## Workflow
 - Pause must stop collection without stopping RAM-retention expiry. Clear logical sample references in inspectors, action previews and sampler identity caches as well as the history ring.
-- Actor awaits can return stale settings. Keep the UI draft authoritative and serialize/coalesce saves of its latest revision.
+- Actor awaits can return stale settings. Keep the UI draft authoritative and serialize/coalesce saves of its latest revision. The draft is authoritative only after saved settings are imported: during startup/retry load it holds defaults, so refuse settings writers and let the import replace it.
 - Source may be ahead of the packaged binary. Record exact build/test exit and observations; never let a source correction imply a passed UI or performance gate.
 - Serel Memory is primary for private local project memory; Kit verify-map records real runs separately from recipes. Keep all memory-bank files and backup branches/bundles out of public commits and pushes; publish only curated reusable docs. Hooks remain off.
