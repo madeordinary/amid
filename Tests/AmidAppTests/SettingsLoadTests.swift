@@ -25,6 +25,8 @@ private final class LoadBarrierKeyProvider: HistoryKeyProvider, @unchecked Senda
     func open() { gate.signal() }
 }
 
+@MainActor private final class Flag { var value = false }
+
 final class SettingsLoadTests: XCTestCase {
     private static let saved = HistorySettings(retention: .week, aliases: ["app:first": "Renamed"])
 
@@ -68,6 +70,7 @@ final class SettingsLoadTests: XCTestCase {
         let model = AppModel(store: store)
         let loading = Task { await model.retryStore() }
         await waitUntilLoadIsHeld(barrier)
+        XCTAssertTrue(model.settingsLoading)
         // The main-window Pause control is reachable while saved settings are still loading.
         model.togglePause()
         barrier.open()
@@ -102,10 +105,16 @@ final class SettingsLoadTests: XCTestCase {
         let model = AppModel(store: store)
         let loading = Task { await model.retryStore() }
         await waitUntilLoadIsHeld(barrier)
+        XCTAssertTrue(model.settingsLoading)
         // Settings form bindings mutate the draft directly, then save.
         model.settings.retention = .day
         model.settings.aliases["app:first"] = "Draft"
-        let save = Task { await model.saveSettings() }
+        let saveReturned = Flag()
+        let save = Task { await model.saveSettings(); saveReturned.value = true }
+        // The save must return while the load is still held; one that reached the store would wait behind it.
+        let deadline = ContinuousClock.now.advanced(by: .seconds(5))
+        while !saveReturned.value && ContinuousClock.now < deadline { await Task.yield() }
+        XCTAssertTrue(saveReturned.value)
         barrier.open()
         await loading.value
         await save.value
