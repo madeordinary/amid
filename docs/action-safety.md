@@ -82,6 +82,7 @@ One SIGTERM is sent through `proc_signal_with_audittoken`. Listed descendants ar
 - The ten-second window is watched in full, so a delayed replacement listener is seen.
 - When the token disappears, a read-only lookup of the same PID, user and start time tells exit from `exec`. It reports "already exited", "switched to another program", or "unavailable" when it cannot tell.
 - A new owner of the port is reported as possibly restarted by a supervisor, with no retry.
+- The token-loss lookup at confirm time and after a rejected dispatch is shared by all adapters. The fixture and darkhttpd paths can now also report a program switch, or "validation unavailable" when the lookup is denied, where they previously always reported "already exited". Their post-signal verification is unchanged.
 - Previewed descendants that are still observed are reported by identity, including after reparenting; descendants Amid cannot observe are reported as unknown.
 
 **Residual risks:**
