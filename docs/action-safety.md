@@ -63,7 +63,7 @@ This is a **weaker, user-directed policy** than the pinned adapters above. The c
 **When Stop is offered** (`DeclaredServerEligibility`, discovery only, every rule required):
 - current user ID;
 - an executable whose basename Amid labels Node.js or Python;
-- an executable outside any `.app` bundle, except a standard framework Python interpreter (`…/Python.framework` or `Python3.framework/Versions/<v>/Resources/Python.app/Contents/MacOS/Python`). Xcode, Homebrew, python.org and Command Line Tools Python run this way; only Xcode's `Contents/Developer/Library/Frameworks` may enclose it in an application;
+- an executable outside any `.app` bundle, except a standard framework Python interpreter (`…/Python.framework` or `Python3.framework/Versions/<v>/Resources/Python.app/Contents/MacOS/Python`). Xcode, Homebrew, python.org and Command Line Tools Python run this way. `Python.app` must be the only application component, except that Xcode's `Contents/Developer/Library/Frameworks` may enclose it;
 - a parent PID above 1;
 - a working directory inside the detected project;
 - complete listening endpoints, all loopback or wildcard, with no other observed owner of those ports.
@@ -80,8 +80,8 @@ One SIGTERM is sent through `proc_signal_with_audittoken`. Listed descendants ar
 
 **Verification and reporting:**
 - The ten-second window is watched in full, so a delayed replacement listener is seen.
-- When the token disappears, a read-only lookup of the same PID, user and start time tells exit from `exec`. It reports "already exited", "switched to another program", or "unavailable" when it cannot tell.
-- A new owner of the port is reported as possibly restarted by a supervisor, with no retry.
+- When the token disappears, a read-only lookup of the same PID, user and start time tells exit from `exec`. It reports "already exited", "switched to another program", or "unavailable" when it cannot tell, including when the same start time now belongs to another user.
+- Only a process with a different identity counts as a new owner of the port; the target's own last-sampled endpoint never does. A new owner is reported as possibly restarted by a supervisor, with no retry.
 - The token-loss lookup at confirm time and after a rejected dispatch is shared by all adapters. The fixture and darkhttpd paths can now also report a program switch, or "validation unavailable" when the lookup is denied, where they previously always reported "already exited". Their post-signal verification is unchanged.
 - Previewed descendants that are still observed are reported by identity, including after reparenting; descendants Amid cannot observe are reported as unknown.
 
@@ -100,7 +100,7 @@ One SIGTERM is sent through `proc_signal_with_audittoken`. Listed descendants ar
 - Xcode framework Python 3.9:
   - Through the test seam between the final checks and dispatch, an `exec` of `/bin/sleep` and a same-path re-exec were both rejected by the kernel. Zero signals were sent, and each was reported as a program switch.
 
-Deterministic `DeclaredServerTests` cover the eligibility matrix, framework-path limits, forged previews, exec and exit lookup, descendant identity and coverage, grandchildren, ancestors, and live running-code capture from `/bin/sleep`.
+The fixture script ran 8/8 owned integrations in 98.5 s, and the full suite ran 229 tests with 22 opt-in skips and 0 failures, plus 27 C cases. Deterministic `DeclaredServerTests` cover the verification outcomes, including an exit after the last sample, the eligibility matrix, framework-path limits, forged previews, exec and exit lookup, descendant identity and coverage, grandchildren, ancestors, and live running-code capture from `/bin/sleep`.
 
 **Not covered:**
 - native UI observation;
@@ -109,4 +109,4 @@ Deterministic `DeclaredServerTests` cover the eligibility matrix, framework-path
 - real Next.js, Vite or Python-reloader behaviour, which needs separately approved installs;
 - macOS 15.
 
-Two read-only Codex reviews (plan and implementation, both REVISE) shaped these rules; their implementation findings are folded in above.
+Three read-only Codex rounds, one on the plan and two on the implementation, all returned REVISE and shaped these rules. Four round-two findings were fixed afterwards without a further independent review: the target's own endpoint misread as another owner, credential-changing exec, a version component named like an application, and an unbounded test wait.

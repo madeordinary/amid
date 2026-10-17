@@ -90,8 +90,10 @@ final class DeclaredServerFixtureIntegrationTests: XCTestCase {
         return (try XCTUnwrap(snapshot.processes.first { $0.identity.pid == pid }, "PID \(pid) was not observed"), snapshot)
     }
     /// A blocking waitUntilExit() in an async test can starve the main queue that delivers the exit.
-    private func waitForExit(_ process: Process) async {
-        while process.isRunning { try? await Task.sleep(for: .milliseconds(50)) }
+    private func waitForExit(_ process: Process, file: StaticString = #filePath, line: UInt = #line) async {
+        let deadline = ContinuousClock.now.advanced(by: .seconds(60))
+        while process.isRunning && ContinuousClock.now < deadline { try? await Task.sleep(for: .milliseconds(50)) }
+        XCTAssertFalse(process.isRunning, "Owned fixture outlived its own lifetime", file: file, line: line)
     }
     private static func executablePath(_ pid: Int32) -> String {
         var buffer = [CChar](repeating: 0, count: 4 * Int(MAXPATHLEN))

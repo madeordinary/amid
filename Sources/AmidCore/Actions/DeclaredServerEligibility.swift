@@ -46,7 +46,10 @@ public enum DeclaredServerEligibility {
         let framework = frameworkParts.dropLast(3).last ?? ""
         guard framework == "Python.framework" || framework == "Python3.framework" else { return false }
         let enclosing = Array(frameworkParts.dropLast(4))
-        guard enclosing.contains(where: { $0.hasSuffix(".app") }) else { return true }
+        let enclosingApps = enclosing.filter { $0.hasSuffix(".app") }.count
+        // Only Python.app itself, plus Xcode, may be an application component; a version named *.app is not a standard install.
+        guard parts.filter({ $0.hasSuffix(".app") }).count == enclosingApps + 1 else { return false }
+        guard enclosingApps > 0 else { return true }
         return enclosing.count == 6 && enclosing[0] == "Applications" && enclosing[1].hasPrefix("Xcode") && enclosing[1].hasSuffix(".app")
             && Array(enclosing[2...]) == ["Contents", "Developer", "Library", "Frameworks"]
     }

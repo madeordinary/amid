@@ -104,6 +104,31 @@ final class DeclaredServerTests: XCTestCase {
         XCTAssertEqual(refused.remainingIdentities, [process.identity])
     }
 
+    func testDeclaredVerificationNeverMistakesTheTargetsOwnEndpointForAnotherOwner() {
+        let target = server(), other = server(pid: 404)
+        let ports: Set<UInt16> = [5173]
+        // The target exited after the last sample: its own sampled endpoint is not another owner.
+        let exitedAfterSample = ActionController.declaredVerification(target: target.identity, finalTokenState: .gone, gone: .alreadyExited,
+                                                                      observed: snapshot([target]), ports: ports, descendants: [])
+        XCTAssertTrue(exitedAfterSample.message.contains("Server exited"), exitedAfterSample.message)
+        XCTAssertTrue(exitedAfterSample.remainingEndpoints.isEmpty)
+        XCTAssertTrue(exitedAfterSample.remainingIdentities.isEmpty)
+        let replaced = ActionController.declaredVerification(target: target.identity, finalTokenState: .gone, gone: .alreadyExited,
+                                                             observed: snapshot([other]), ports: ports, descendants: [])
+        XCTAssertTrue(replaced.message.contains("Another process now owns port 5173"), replaced.message)
+        let switched = ActionController.declaredVerification(target: target.identity, finalTokenState: .gone, gone: .programChanged,
+                                                             observed: snapshot([target]), ports: ports, descendants: [])
+        XCTAssertTrue(switched.message.contains("switched to another program"), switched.message)
+        XCTAssertEqual(switched.remainingIdentities, [target.identity])
+        let alive = ActionController.declaredVerification(target: target.identity, finalTokenState: .alive, gone: nil,
+                                                          observed: snapshot([target]), ports: ports, descendants: [])
+        XCTAssertTrue(alive.message.contains("Still running"), alive.message)
+        let unknown = ActionController.declaredVerification(target: target.identity, finalTokenState: .gone, gone: .stale,
+                                                            observed: snapshot([]), ports: ports, descendants: [])
+        XCTAssertFalse(unknown.remainingObservationAvailable)
+        XCTAssertTrue(unknown.message.contains("unavailable"), unknown.message)
+    }
+
     func testForgedDeclaredPreviewCannotSignal() async {
         let process = server()
         var forged = StopPreview(process: process, descendants: [], createdAt: Date(), disabledReason: "", canStop: true, operationID: UUID())
@@ -122,7 +147,8 @@ final class DeclaredServerTests: XCTestCase {
         }
         for refused in ["/Applications/Blender.app/Contents/Resources/Python.framework/Versions/3.11" + suffix,
                         "/Applications/Editor.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9" + suffix,
-                        "/Applications/Xcode.app/Contents/Resources/Python3.framework/Versions/3.9" + suffix] {
+                        "/Applications/Xcode.app/Contents/Resources/Python3.framework/Versions/3.9" + suffix,
+                        "/Library/Frameworks/Python.framework/Versions/Tool.app" + suffix] {
             XCTAssertFalse(DeclaredServerEligibility.isFrameworkPythonInterpreter(refused), refused)
             assertReadOnly(server(executable: refused), containing: "application bundle")
         }

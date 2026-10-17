@@ -207,23 +207,9 @@ public actor ActionController {
         var result: StopResult
         if declared {
             // A vanished token alone cannot distinguish exit from exec; look the incarnation up directly.
-            let gone = finalTokenState == .gone ? Self.goneValidation(target) : nil
-            let remainingAvailable = Self.remainingObservationAvailable(in: observed, target: target, originalKnownGone: gone == .alreadyExited)
-                && finalTokenState != .unknown && gone != .stale && (finalTokenState != .alive || originalPresent)
-            let stillPresent = finalTokenState == .alive || gone == .programChanged
-            let descendants = Self.remainingDescendants(authorization.preview.descendants, in: observed)
-            if !remainingAvailable { message = localized("SIGTERM sent once; original-target verification is unavailable.") }
-            else if finalTokenState == .alive { message = localized("Still running after SIGTERM; no retry or force kill.") }
-            else if gone == .programChanged { message = localized("The process switched to another program after the signal. Amid sent one signal and will not retry.") }
-            else if !remainingPorts.isEmpty {
-                message = localizedFormat("Another process now owns port %@, possibly restarted by a supervisor. Amid will not retry; stop the parent in its terminal.",
-                                          Array(Set(remainingPorts.map(\.port))).sorted().map(String.init).joined(separator: ", "))
-            } else { message = localized("Server exited; no remaining observed endpoint owner.") }
-            result = StopResult(targetID: target.id, validation: .unchanged, message: message, signalsSent: 1,
-                                remainingIdentities: remainingAvailable && stillPresent ? [target] : [],
-                                remainingEndpoints: remainingAvailable ? remainingPorts : [], remainingObservationAvailable: remainingAvailable)
-            result.remainingDescendants = descendants.observed
-            result.descendantsUnknown = descendants.unknown
+            result = Self.declaredVerification(target: target, finalTokenState: finalTokenState,
+                                               gone: finalTokenState == .gone ? Self.goneValidation(target) : nil,
+                                               observed: observed, ports: ports, descendants: authorization.preview.descendants)
         } else {
             let remainingAvailable = Self.remainingObservationAvailable(in: observed, target: target, originalKnownGone: finalTokenState == .gone)
                 && finalTokenState != .unknown && (finalTokenState != .alive || originalPresent)
@@ -237,6 +223,33 @@ public actor ActionController {
         }
         return result
     }
+    /// Declared-server outcome from the last observation and the token state read after it.
+    nonisolated static func declaredVerification(target: ProcessIdentity, finalTokenState: TokenState, gone: TargetValidation?,
+                                                 observed: Snapshot, ports: Set<UInt16>, descendants: [ProcessIdentity]) -> StopResult {
+        let originalPresent = observed.processes.contains { $0.identity == target }
+        let remainingAvailable = remainingObservationAvailable(in: observed, target: target, originalKnownGone: gone == .alreadyExited)
+            && finalTokenState != .unknown && gone != .stale && (finalTokenState != .alive || originalPresent)
+        let stillPresent = finalTokenState == .alive || gone == .programChanged
+        // The target may exit after the last sample; only a different identity can be another owner.
+        let ownPorts = observed.processes.filter { $0.identity == target }.flatMap(\.endpoints).filter { ports.contains($0.port) }
+        let otherPorts = observed.processes.filter { $0.identity != target }.flatMap(\.endpoints).filter { ports.contains($0.port) }
+        let message: String
+        if !remainingAvailable { message = localized("SIGTERM sent once; original-target verification is unavailable.") }
+        else if finalTokenState == .alive { message = localized("Still running after SIGTERM; no retry or force kill.") }
+        else if gone == .programChanged { message = localized("The process switched to another program after the signal. Amid sent one signal and will not retry.") }
+        else if !otherPorts.isEmpty {
+            message = localizedFormat("Another process now owns port %@, possibly restarted by a supervisor. Amid will not retry; stop the parent in its terminal.",
+                                      Array(Set(otherPorts.map(\.port))).sorted().map(String.init).joined(separator: ", "))
+        } else { message = localized("Server exited; no remaining observed endpoint owner.") }
+        var result = StopResult(targetID: target.id, validation: .unchanged, message: message, signalsSent: 1,
+                                remainingIdentities: remainingAvailable && stillPresent ? [target] : [],
+                                remainingEndpoints: remainingAvailable ? (stillPresent ? ownPorts : []) + otherPorts : [],
+                                remainingObservationAvailable: remainingAvailable)
+        let survivors = remainingDescendants(descendants, in: observed)
+        result.remainingDescendants = survivors.observed
+        result.descendantsUnknown = survivors.unknown
+        return result
+    }
     /// Exit and exec both invalidate the token; only exec leaves the same PID, user and start time behind.
     /// Read-only lookup at the moment of loss, so an exit after the last sample is not mistaken for exec.
     nonisolated static func goneValidation(_ target: ProcessIdentity) -> TargetValidation {
@@ -246,9 +259,11 @@ public actor ActionController {
         guard proc_pidinfo(target.pid, PROC_PIDTBSDINFO, 0, &info, size) == size else {
             return errno == ESRCH ? .alreadyExited : .stale
         }
-        let same = info.pbi_uid == target.uid && UInt64(info.pbi_start_tvsec) == target.startSeconds
-            && UInt64(info.pbi_start_tvusec) == target.startMicroseconds
-        return same ? .programChanged : .alreadyExited
+        guard UInt64(info.pbi_start_tvsec) == target.startSeconds, UInt64(info.pbi_start_tvusec) == target.startMicroseconds else {
+            return .alreadyExited
+        }
+        // Same start under another user means a credential-changing exec; its program cannot be confirmed.
+        return info.pbi_uid == target.uid ? .programChanged : .stale
     }
     /// Descendants are matched by recorded identity, so reparented children are still found.
     nonisolated static func remainingDescendants(_ previewed: [ProcessIdentity], in snapshot: Snapshot) -> (observed: [ProcessIdentity], unknown: Bool) {
