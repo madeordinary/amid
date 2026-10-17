@@ -1,6 +1,6 @@
 # Everyday development-server stop — plan
 
-Status: approved by the owner on 2026-10-17 with all six recommended choices and the PRD wording below, after a read-only Codex review (REVISE) whose corrections are incorporated. Implementation in progress; the `requirements.md` M-11 row is unchanged until evidence exists. On 2026-10-14 the owner decided to extend Stop from two pinned binaries to the development servers people actually run. This plan proposes how, within Amid's existing safety and privacy rules. Baseline: public `fd45ac3`.
+Status: approved by the owner on 2026-10-17 with all six recommended choices and the PRD wording below, after a read-only Codex review (REVISE) whose corrections are incorporated. Implemented 2026-10-17 with owned-integration evidence; native UI observation is pending. See [stage 3](action-safety.md#user-declared-development-servers-stage-3) for what was built, observed and left uncovered, including the framework-Python exemption and a second Codex review. On 2026-10-14 the owner decided to extend Stop from two pinned binaries to the development servers people actually run. This plan proposes how, within Amid's existing safety and privacy rules. Baseline: public `fd45ac3`.
 
 ## Goal
 

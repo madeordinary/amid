@@ -79,7 +79,7 @@ Historical verification-only sampler breakdown passed 36 focused tests with 1 op
 
 ## Architecture and boundaries
 
-Public process/system/socket metadata feeds separate collector, identity, attribution, encrypted-history, alert and action components. CryptoKit AES-GCM generations and an authenticated manifest use a per-install app-owned key. Off history expires by wall clock, including while paused; clear/lock invalidate raw/action/inspector caches. Only exact known server builds and identities can receive a confirmed audit-token-bound SIGTERM; generic runtimes stay read-only.
+Public process/system/socket metadata feeds separate collector, identity, attribution, encrypted-history, alert and action components. CryptoKit AES-GCM generations and an authenticated manifest use a per-install app-owned key. Off history expires by wall clock, including while paused; clear/lock invalidate raw/action/inspector caches. Exact known server builds, and user-declared Node.js and Python development servers whose running code is bound at preview, can receive one confirmed audit-token-bound SIGTERM; other generic runtimes stay read-only.
 
 No monitored arguments, environments, prompts, file contents, clipboard, credentials or payloads are collected. There is no root helper, private framework, Docker socket, account, analytics or runtime network dependency. No existing user workload or normal store was changed during tests. [Storage](storage-design.md), [action safety](action-safety.md).
 

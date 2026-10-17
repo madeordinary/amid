@@ -12,6 +12,19 @@ final class ActionPresentationTests: XCTestCase {
             XCTAssertFalse(detail.contains("endpoints: 0"))
         }
     }
+    func testChildProcessStateIsReportedWithoutClaimingZero() {
+        let child = ProcessIdentity(bootID: "boot", pid: 304, uid: 501, startSeconds: 4, startMicroseconds: 2)
+        var running = StopResult(targetID: "server", validation: .unchanged, message: "Server exited.", signalsSent: 1, remainingObservationAvailable: true)
+        running.remainingDescendants = [child]
+        XCTAssertTrue(stopResultDetail(running).contains("Child processes still running, not signalled: 1."))
+        var unknown = running; unknown.remainingDescendants = []; unknown.descendantsUnknown = true
+        XCTAssertTrue(stopResultDetail(unknown).contains("Child process state is unavailable."))
+        var mixed = running; mixed.descendantsUnknown = true
+        let mixedDetail = stopResultDetail(mixed)
+        XCTAssertTrue(mixedDetail.contains("Child processes still running, not signalled: 1.") && mixedDetail.contains("Child process state is unavailable."))
+        let none = StopResult(targetID: "server", validation: .unchanged, message: "Server exited.", signalsSent: 1, remainingObservationAvailable: true)
+        XCTAssertFalse(stopResultDetail(none).contains("Child process"))
+    }
     func testObservedEmptyResultCanDisplayZeroCounts() {
         let result = StopResult(targetID: "fixture", validation: .unchanged, message: "Exited.", signalsSent: 1, remainingObservationAvailable: true)
         let detail = stopResultDetail(result)

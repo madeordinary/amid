@@ -198,10 +198,13 @@ struct ProcessDetail: View {
     @State private var actionBusy = false
     @State private var developmentConfirmed = false
     private var live: ProcessSample? { model.snapshot.processes.first { $0.identity == process.identity } }
-    // A discovery hint only. The controller validates the exact disk and running build.
+    // A discovery hint only. The controller validates the exact process, path and running code.
     private var canReviewServer: Bool {
-        let path = (live ?? process).executable
-        return URL(fileURLWithPath: path).lastPathComponent == "AmidFixture" || SupportedServerBuilds.canReview(executablePath: path)
+        let current = live ?? process
+        let path = current.executable
+        if URL(fileURLWithPath: path).lastPathComponent == "AmidFixture" || SupportedServerBuilds.canReview(executablePath: path) { return true }
+        if case .eligible = DeclaredServerEligibility.evaluate(process: current, snapshot: model.snapshot) { return true }
+        return false
     }
     var body: some View {
         let process = live ?? self.process
@@ -266,8 +269,27 @@ struct ProcessDetail: View {
                         Text("UID \(stopPreview.process.identity.uid) · PID \(stopPreview.process.identity.pid) · start \(stopPreview.process.identity.startSeconds).\(stopPreview.process.identity.startMicroseconds)").font(.caption.monospaced()).textSelection(.enabled)
                         Text(stopPreview.process.projectPath ?? "Unknown project").font(.caption.monospaced())
                         ForEach(stopPreview.endpoints) { endpoint in Text("TCP \(endpoint.family) \(endpoint.address):\(endpoint.port)") }
-                        Text("Validated children: \(stopPreview.descendants.count)")
-                        if stopPreview.requiresDevelopmentConfirmation {
+                        if !stopPreview.declaration.isEmpty {
+                            if !stopPreview.ancestors.isEmpty {
+                                Text("Started by: \((stopPreview.ancestors + [URL(fileURLWithPath: stopPreview.process.executable).lastPathComponent]).joined(separator: " › "))")
+                                    .font(.caption.monospaced())
+                            }
+                            Text("Child processes, which Amid will not signal: \(stopPreview.descendants.count)")
+                            ForEach(stopPreview.descendants) { child in
+                                let name = model.snapshot.processes.first { $0.identity == child }.map { URL(fileURLWithPath: $0.executable).lastPathComponent } ?? localized("Unavailable")
+                                Text("PID \(child.pid) · start \(child.startSeconds).\(child.startMicroseconds) · \(name)").font(.caption.monospaced())
+                            }
+                            if stopPreview.exposedToNetwork {
+                                Notice(title: localized("May be reachable from your network"), detail: localized("This server listens on all interfaces, not only on this Mac."), symbol: "network")
+                            }
+                            Text("Amid does not read launch arguments. It cannot tell a development server from a model server, notebook or editor service running under the same runtime, so this declaration is yours. A process manager may restart the server.")
+                                .font(.callout).foregroundStyle(.secondary)
+                            Toggle(stopPreview.declaration, isOn: $developmentConfirmed)
+                                .toggleStyle(.checkbox).disabled(actionBusy)
+                        } else {
+                            Text("Validated children: \(stopPreview.descendants.count)")
+                        }
+                        if stopPreview.requiresDevelopmentConfirmation && stopPreview.declaration.isEmpty {
                             Text("The project comes from the observed working directory. It does not establish the served directory or whether clients are connected. Active downloads can be interrupted.")
                                 .font(.callout).foregroundStyle(.secondary)
                             Text("Supported use: foreground static-file serving, without daemon, chroot, user/group switching, PID-file, syslog or redirect options. Amid does not inspect launch arguments; this declaration is yours.")

@@ -56,7 +56,7 @@ Command-1 through Command-7 switch destinations. Command-R refreshes; Command-Sh
 
 ## Graceful-stop scope
 
-The source supports the bundled development fixture and one independently pinned, corrected darkhttpd v1.17 build. Generic Node/Python/Swift servers, terminals, databases, model runtimes, containers and other applications remain read-only. Owned integration tests and native UI checks observed the real-server declaration, cancellation, fresh-preview reset, expired-preview refusal and one confirmed stop. See [native observations](docs/evidence/acceptance-ui-observations.md); this evidence covers only the reviewed adapter and owned test server.
+The source supports the bundled development fixture, one independently pinned, corrected darkhttpd v1.17 build, and your own Node.js and Python development servers. A Node.js or Python listener in a detected project offers a graceful stop after you declare it as your development server. Amid checks that exact process and its running code, then sends one SIGTERM and never force-quits. Amid does not read launch arguments, so it cannot tell a model server or notebook from a development server; your declaration decides. Terminals, databases, model runtimes, containers and other applications remain read-only. See [stage 3](docs/action-safety.md#user-declared-development-servers-stage-3); native UI checks of declared stops are still pending. Owned integration tests and native UI checks observed the real-server declaration, cancellation, fresh-preview reset, expired-preview refusal and one confirmed stop. See [native observations](docs/evidence/acceptance-ui-observations.md); this evidence covers only the reviewed adapter and owned test server.
 
 ```sh
 bash scripts/start-demo-server.sh

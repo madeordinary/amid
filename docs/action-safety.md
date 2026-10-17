@@ -1,6 +1,6 @@
 # Graceful stop feasibility and fixture evidence
 
-The original supported adapter is deliberately narrow: its SHA-256- and CodeDirectory-hash-pinned native `AmidFixture` loopback development sample, with the exact trusted executable path and project root. The packaged app supplies the expected digests from its build manifest; generic Node/Python/Swift processes remain read-only. The adapter never trusts a runtime name or project marker alone. This is limited M-11 coverage; arbitrary development servers are not supported.
+The original supported adapter is deliberately narrow: its SHA-256- and CodeDirectory-hash-pinned native `AmidFixture` loopback development sample, with the exact trusted executable path and project root. The packaged app supplies the expected digests from its build manifest. The adapter never trusts a runtime name or project marker alone. Stage 3 below adds user-declared Node.js and Python development servers under a weaker, user-directed policy; other generic processes remain read-only.
 
 ## Public API investigation
 
@@ -53,3 +53,59 @@ The ten-second post-signal verification deadline uses ContinuousClock; preview a
 Stage-2 observed 2026-10-02 12:57:52 CDT: focused native run exited 0, 13 tests / 0 skips / 0 failures (nine ActionTests, two ReviewedServerAdapterTests, two App StopLifecycleTests). The real-controller integration launched only new eight-second bounded owned servers: PID 46250 / port 49274 idle and PID 46261 / port 49276 with synthetic HTTP 200 then unread 128 MiB transfer. Both received exactly one authorized token-bound SIGTERM and exited 0, with original identity and endpoint observations empty. Missing declaration, forged requiresDevelopmentConfirmation=false, repeated/consumed authorization, reset and previous-incarnation confirmation sent zero signals. PID 46272 / port 49278 ran the same server with a distinct ad-hoc signing identity; replacing its pathname with the independently trusted bytes still failed running-code validation and sent zero signals; it naturally expired via SIGALRM. All owned children exited. These are automated controller observations, not live app UI acceptance.
 
 Earlier stage-2 attempts remain failures: two canonical-path association runs stayed read-only and naturally expired; a curl-buffering client assertion failed despite controller stops. The final direct synthetic socket asserts an HTTP 200 response before stopping consumption and verifies the server's final GET log. The optional script initially rejected a different relative-path linker UUID, then rejected incomplete CDHash extraction; final absolute-path build and verbose signature extraction exited 0 at `/private/tmp/amid-supported-darkhttpd-tLYDLCIB/darkhttpd`. No failed attempt is counted as a pass.
+
+## User-declared development servers (stage 3)
+
+Owner decision 2026-10-14, approved 2026-10-17 with the six recommended choices in the [everyday stop plan](everyday-stop-plan.md). A current-user Node.js or Python listener in a detected project may be stopped as a user-declared development server.
+
+This is a **weaker, user-directed policy** than the pinned adapters above. The checks prove that Amid signals the same process, running the same executable, that the user reviewed. They say nothing about its script, loaded modules, role or shutdown behaviour, so the user's per-preview declaration supplies the intent.
+
+**When Stop is offered** (`DeclaredServerEligibility`, discovery only, every rule required):
+- current user ID;
+- an executable whose basename Amid labels Node.js or Python;
+- an executable outside any `.app` bundle, except a standard framework Python interpreter (`…/Python.framework` or `Python3.framework/Versions/<v>/Resources/Python.app/Contents/MacOS/Python`). Xcode, Homebrew, python.org and Command Line Tools Python run this way; only Xcode's `Contents/Developer/Library/Frameworks` may enclose it in an application;
+- a parent PID above 1;
+- a working directory inside the detected project;
+- complete listening endpoints, all loopback or wildcard, with no other observed owner of those ports.
+
+Wildcard listeners show a notice that they may be reachable from the network. With the initial Node.js and Python allowlist, the plan's never-stop names (databases, model runtimes, container hosts, terminals, Amid) cannot be offered, so no separate list exists yet. One is needed if the runtime set grows.
+
+**What authorizes the signal:**
+1. A genuine audit token taken at preview. Its token-bound path must equal the previewed executable.
+2. The running guest is validated with `SecCodeCheckValidity` before its CodeDirectory hash is read, as `SecCode.h` requires. That hash is then required through a `cdhash` requirement at preview and again, against the original token, at confirm.
+3. A fresh per-preview declaration naming the project, executable basename and ports. It is enforced from the stored adapter kind.
+4. An immediate re-sample with unchanged identity, metadata, endpoints and descendants, and eligibility re-checked on that fresh sample.
+
+One SIGTERM is sent through `proc_signal_with_audittoken`. Listed descendants are shown with full identities and are never signalled.
+
+**Verification and reporting:**
+- The ten-second window is watched in full, so a delayed replacement listener is seen.
+- When the token disappears, a read-only lookup of the same PID, user and start time tells exit from `exec`. It reports "already exited", "switched to another program", or "unavailable" when it cannot tell.
+- A new owner of the port is reported as possibly restarted by a supervisor, with no retry.
+- Previewed descendants that are still observed are reported by identity, including after reparenting; descendants Amid cannot observe are reported as unknown.
+
+**Residual risks:**
+- Metadata and descendants can change between the final sample and dispatch.
+- A signal accepted just before an `exec` reaches the new program.
+- Amid cannot verify intent without reading arguments. Model servers, notebooks and editor or agent services running under Node.js or Python can be offered Stop, and only the declaration excludes them.
+
+**Observed 2026-10-17** (arm64 macOS 27.0.1, Xcode toolchain): owned integrations `DeclaredServerFixtureIntegrationTests` passed 7/7 in 74.4 s, with no downloads.
+- Node.js v22.21.1 (nvm, Developer ID: Node.js Foundation):
+  - Plain server: undeclared and reused confirmations sent zero signals; the declared confirmation sent one SIGTERM, and the server exited 0.
+  - A server ignoring SIGTERM was reported still running; there was no force, and it exited on its own timer.
+  - A long-lived `sleep` child was listed, never signalled, and reported still running by identity after reparenting.
+  - A parent that restarts its child after two seconds was reported as "another process now owns port …".
+  - A copied `node` whose pathname was replaced with `/bin/sleep` bytes stayed unavailable ("Running code identity is unavailable").
+- Xcode framework Python 3.9:
+  - Through the test seam between the final checks and dispatch, an `exec` of `/bin/sleep` and a same-path re-exec were both rejected by the kernel. Zero signals were sent, and each was reported as a program switch.
+
+Deterministic `DeclaredServerTests` cover the eligibility matrix, framework-path limits, forged previews, exec and exit lookup, descendant identity and coverage, grandchildren, ancestors, and live running-code capture from `/bin/sleep`.
+
+**Not covered:**
+- native UI observation;
+- pending SIGTERM across `exec`, which cannot be made deterministic;
+- unsigned or Rosetta-translated binaries;
+- real Next.js, Vite or Python-reloader behaviour, which needs separately approved installs;
+- macOS 15.
+
+Two read-only Codex reviews (plan and implementation, both REVISE) shaped these rules; their implementation findings are folded in above.

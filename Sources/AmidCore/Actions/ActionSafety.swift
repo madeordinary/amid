@@ -8,6 +8,11 @@ public struct StopPreview: Sendable {
     public let canStop: Bool
     public let operationID: UUID?
     public var requiresDevelopmentConfirmation: Bool = false
+    /// Non-empty only for a user-declared development server: the statement the user must tick.
+    public var declaration: String = ""
+    public var exposedToNetwork: Bool = false
+    /// Executable basenames of observed ancestors, outermost first.
+    public var ancestors: [String] = []
     public var identities: [ProcessIdentity] { [process.identity] + descendants }
     public var endpoints: [Endpoint] { process.endpoints }
     public static func unavailable(process: ProcessSample, reason: String) -> StopPreview {
@@ -16,7 +21,7 @@ public struct StopPreview: Sendable {
 }
 
 public enum TargetValidation: String, Sendable {
-    case unchanged, alreadyExited, identityChanged, metadataChanged, sharedEndpoint, descendantsChanged, stale
+    case unchanged, alreadyExited, programChanged, identityChanged, metadataChanged, sharedEndpoint, descendantsChanged, stale
 }
 
 public struct StopResult: Sendable {
@@ -28,6 +33,9 @@ public struct StopResult: Sendable {
     public var remainingEndpoints: [Endpoint] = []
     /// False means the remaining arrays cannot support a measured count, including zero.
     public var remainingObservationAvailable: Bool = false
+    /// Previewed descendants still observed by identity; they were never signalled.
+    public var remainingDescendants: [ProcessIdentity] = []
+    public var descendantsUnknown: Bool = false
 }
 
 /// Display grouping never authorizes a process action. There is deliberately no signal path.
@@ -35,14 +43,10 @@ public enum ActionSafety {
     public static let previewValidity: TimeInterval = 120
     public static var identityBlocker: String { localized("Stop unavailable: no enrolled trusted development-server adapter. PID checks alone cannot prevent reuse; generic runtime metadata cannot establish server intent.") }
     public static func preview(process: ProcessSample, snapshot: Snapshot) -> StopPreview {
-        let runtime = process.runtime?.lowercased() ?? ""
         let reason: String
-        if !["node", "node.js", "python", "swift"].contains(runtime) {
-            reason = localized("Read-only: this runtime has no development-server stop adapter.")
-        } else if process.projectPath == nil || process.endpoints.isEmpty || process.portAvailability != .available {
-            reason = localized("Read-only: project and listening endpoint ownership are not fully available.")
-        } else {
-            reason = localized("Stop unavailable: no enrolled trusted development-server adapter. PID checks alone cannot prevent reuse; generic runtime metadata cannot establish server intent. A runtime, project marker and listener also cannot establish that this is a disposable development server.")
+        switch DeclaredServerEligibility.evaluate(process: process, snapshot: snapshot) {
+        case .readOnly(let readOnly): reason = readOnly
+        case .eligible: reason = localized("Review required: Amid checks this exact process and asks you to declare it as your development server before any signal.")
         }
         return StopPreview(process: process, descendants: descendants(of: process.identity.pid, in: snapshot),
                            createdAt: snapshot.timestamp, disabledReason: reason, canStop: false, operationID: nil)

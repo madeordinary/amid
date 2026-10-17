@@ -6,7 +6,10 @@ func stopResultDetail(_ result: StopResult) -> String {
     let remaining = result.remainingObservationAvailable
         ? localizedFormat("Remaining observed identities: %ld; endpoints: %ld.", result.remainingIdentities.count, result.remainingEndpoints.count)
         : localized("Remaining process and endpoint state is unavailable.")
-    return [result.message, signals, remaining].joined(separator: " ")
+    var parts = [result.message, signals, remaining]
+    if !result.remainingDescendants.isEmpty { parts.append(localizedFormat("Child processes still running, not signalled: %ld.", result.remainingDescendants.count)) }
+    if result.descendantsUnknown { parts.append(localized("Child process state is unavailable.")) }
+    return parts.joined(separator: " ")
 }
 
 func bytes(_ value: UInt64?) -> String {

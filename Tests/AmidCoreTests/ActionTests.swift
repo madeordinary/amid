@@ -5,7 +5,7 @@ import Security
 
 final class ActionTests: XCTestCase {
     private func process(pid: Int32 = 101, parent: Int32 = 1, start: UInt64 = 4) -> ProcessSample {
-        ProcessSample(identity: .init(bootID: "boot", pid: pid, uid: 501, startSeconds: start, startMicroseconds: 2),
+        ProcessSample(identity: .init(bootID: "boot", pid: pid, uid: getuid(), startSeconds: start, startMicroseconds: 2),
                       parentPID: parent, executable: "/bin/node", name: "node", runtime: "node", workingDirectory: "/test/project",
                       projectPath: "/test/project", applicationID: "fixture", applicationName: "fixture", groupingReason: "fixture",
                       endpoints: [.init(address: "127.0.0.1", port: 43210, family: "IPv4", scope: "Loopback")], portAvailability: .available)
@@ -19,7 +19,8 @@ final class ActionTests: XCTestCase {
         XCTAssertEqual(Set(preview.identities), Set([p.identity, child.identity]))
         XCTAssertEqual(preview.endpoints, p.endpoints)
         XCTAssertFalse(preview.canStop)
-        XCTAssertTrue(preview.disabledReason.contains("PID"))
+        // Parent PID 1 keeps a generic runtime read-only even when it has a project and listener.
+        XCTAssertTrue(preview.disabledReason.contains("launchd"), preview.disabledReason)
         XCTAssertEqual(ActionSafety.confirm(preview: preview, current: state, confirmed: true).signalsSent, 0)
         XCTAssertEqual(ActionSafety.confirm(preview: preview, current: state, confirmed: false).signalsSent, 0)
     }
@@ -29,7 +30,7 @@ final class ActionTests: XCTestCase {
         XCTAssertEqual(ActionSafety.validate(preview: preview, current: snapshot([process(start: 5)])), .identityChanged)
         var changed = p; changed.identity.bootID = "reboot"
         XCTAssertEqual(ActionSafety.validate(preview: preview, current: snapshot([changed])), .identityChanged)
-        changed = p; changed.identity.uid = 502
+        changed = p; changed.identity.uid = getuid() + 1
         XCTAssertEqual(ActionSafety.validate(preview: preview, current: snapshot([changed])), .identityChanged)
     }
     func testReparentExecProjectEndpointAndCoverageInvalidation() {
