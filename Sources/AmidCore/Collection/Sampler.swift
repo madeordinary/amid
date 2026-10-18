@@ -53,7 +53,21 @@ private final class MemoryPressureObserver: @unchecked Sendable {
 }
 
 public actor Sampler {
+    /// Full reads every process's metadata on every sample. Incremental reads counters every sample and refreshes
+    /// path, working directory, project and listening ports per process when it is new, young, renamed or stale.
+    public enum CollectionMode: Sendable, Equatable {
+        case full
+        case incremental(metadataRefresh: Double = 30, youngProcessAge: Double = 60, markerRefresh: Double = 60)
+    }
     private struct Counter { var value: UInt64; var time: Double }
+    private struct Metadata {
+        var name: String; var executable: String; var workingDirectory: String?; var project: String?
+        var application: (String, String, String); var runtime: String?
+        var endpoints: [Endpoint]; var portAvailability: Availability; var refreshed: Double
+    }
+    private let mode: CollectionMode
+    private var metadata: [ProcessIdentity: Metadata] = [:]
+    private var projectCache: (epoch: Double, byCWD: [String: String], markers: [String: Bool])?
     private var processCounters: [ProcessIdentity: Counter] = [:]
     private var interfaceCounters: [String: (UInt64, UInt64, Double)] = [:]
     private var systemCounter: AmidSystem?
@@ -64,7 +78,7 @@ public actor Sampler {
     private var stringStorage = ProcessStringStorage()
     private var bootID: String?
     private var pressureObserver: MemoryPressureObserver?
-    public init() {}
+    public init(mode: CollectionMode = .full) { self.mode = mode }
     var retainedStringIdentityCount: Int { stringStorage.retainedIdentityCount }
     var initializedCollectionResources: Bool { bootID != nil || pressureObserver != nil }
     private func initializeCollectionResources() {
@@ -74,7 +88,7 @@ public actor Sampler {
         bootID = result == 0 ? String(decoding: buffer.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }, as: UTF8.self) : "unavailable-\(UUID().uuidString)"
         pressureObserver = MemoryPressureObserver()
     }
-    public func resetBaselines() { stringStorage.reset(); processCounters.removeAll(); firstSeen.removeAll(); interfaceCounters.removeAll(); systemCounter = nil; powerSampleTime = nil }
+    public func resetBaselines() { stringStorage.reset(); processCounters.removeAll(); firstSeen.removeAll(); interfaceCounters.removeAll(); systemCounter = nil; powerSampleTime = nil; metadata.removeAll(); projectCache = nil }
     /// Verification-only synchronous own-current-thread attribution; sampling behavior is unchanged.
     public func profiledSample(cadence: Double = 5, projectBoundaries: [String] = []) -> (snapshot: Snapshot, measurement: OwnCurrentThreadMeasurement.Report, breakdown: SamplerProfile.Report) {
         let measurement = OwnCurrentThreadMeasurement()
@@ -99,6 +113,14 @@ public actor Sampler {
         var inaccessible = 0
         var projectsByCWD: [String: String] = [:]
         var markerCache: [String: Bool] = [:]
+        var policy: (metadataRefresh: Double, youngProcessAge: Double)?
+        if case let .incremental(metadataRefresh, youngProcessAge, markerRefresh) = mode {
+            policy = (metadataRefresh, youngProcessAge)
+            // Project markers can appear or disappear; incremental caches expire as a whole.
+            if let cache = projectCache, start - cache.epoch < markerRefresh { projectsByCWD = cache.byCWD; markerCache = cache.markers }
+            else { projectCache = (start, [:], [:]) }
+        }
+        var nextMetadata: [ProcessIdentity: Metadata] = [:]
         var nextCounters: [ProcessIdentity: Counter] = [:]
         var nextSeen: [ProcessIdentity: Date] = [:]
         var ports = [AmidPort](repeating: AmidPort(), count: 256)
@@ -106,6 +128,30 @@ public actor Sampler {
         for pid in pids.prefix(min(Int(count), pids.count)) where pid > 0 {
             profile?.beginIteration()
             defer { profile?.endIteration() }
+            if let policy {
+                var counters = AmidCounters()
+                let counterStatus = amid_counters(pid, &counters)
+                profile?.endFine(.processOS)
+                guard counterStatus == 1 else { inaccessible += 1; continue }
+                let identity = ProcessIdentity(bootID: bootID, pid: pid, uid: counters.uid, startSeconds: counters.seconds, startMicroseconds: counters.micros)
+                let name = cString(counters.name)
+                let seen = firstSeen[identity] ?? date
+                // A changed name suggests exec; new, young and stale processes also get a full metadata read.
+                if let cached = metadata[identity], cached.name == name, start - cached.refreshed < policy.metadataRefresh,
+                   date.timeIntervalSince1970 - Double(counters.seconds) >= policy.youngProcessAge {
+                    var cpu: Double?
+                    if counters.cpu_known == 1 {
+                        if let prior = processCounters[identity], counters.cpu >= prior.value, start > prior.time { cpu = Double(counters.cpu - prior.value) / (start - prior.time) / 1_000_000_000 * 100 }
+                        nextCounters[identity] = Counter(value: counters.cpu, time: start)
+                    }
+                    profile?.endFine(.decoding)
+                    nextMetadata[identity] = cached
+                    nextSeen[identity] = seen
+                    processes.append(ProcessSample(identity: identity, parentPID: counters.parent, executable: cached.executable, name: name, runtime: cached.runtime, cpuPercent: cpu, memoryBytes: counters.memory_method == 0 ? nil : counters.memory, memoryMethod: counters.memory_method == 1 ? .footprint : counters.memory_method == 2 ? .rss : .unavailable, workingDirectory: cached.workingDirectory, projectPath: cached.project, applicationID: cached.application.0, applicationName: cached.application.1, groupingReason: cached.application.2, endpoints: cached.endpoints, portAvailability: cached.portAvailability, observedSince: seen))
+                    profile?.endFine(.construction)
+                    continue
+                }
+            }
             var raw = AmidProcess()
             let processStatus = amid_process(pid, &raw)
             profile?.endFine(.processOS)
@@ -142,16 +188,31 @@ public actor Sampler {
             }).sorted { $0.id < $1.id }
             let seen = firstSeen[identity] ?? date
             nextSeen[identity] = seen
-            processes.append(ProcessSample(identity: identity, parentPID: raw.parent, executable: executable, name: name, runtime: profile == nil ? Self.runtime(executable) : runtime, cpuPercent: cpu, memoryBytes: raw.memory_method == 0 ? nil : raw.memory, memoryMethod: raw.memory_method == 1 ? .footprint : raw.memory_method == 2 ? .rss : .unavailable, workingDirectory: cwd, projectPath: project, applicationID: app.0, applicationName: app.1, groupingReason: app.2, endpoints: endpoints, portAvailability: portStatus == 1 ? .available : portStatus == 2 ? .denied : .unavailable, observedSince: seen))
+            let portAvailability: Availability = portStatus == 1 ? .available : portStatus == 2 ? .denied : .unavailable
+            if let policy {
+                // First reads are backdated by a per-process fraction so cached processes do not all refresh together.
+                let refreshed = metadata[identity] == nil ? start - Self.refreshStagger(pid: pid, interval: policy.metadataRefresh) : start
+                nextMetadata[identity] = Metadata(name: name, executable: executable, workingDirectory: cwd, project: project, application: app,
+                                                  runtime: Self.runtime(executable), endpoints: endpoints, portAvailability: portAvailability, refreshed: refreshed)
+            }
+            processes.append(ProcessSample(identity: identity, parentPID: raw.parent, executable: executable, name: name, runtime: profile == nil ? Self.runtime(executable) : runtime, cpuPercent: cpu, memoryBytes: raw.memory_method == 0 ? nil : raw.memory, memoryMethod: raw.memory_method == 1 ? .footprint : raw.memory_method == 2 ? .rss : .unavailable, workingDirectory: cwd, projectPath: project, applicationID: app.0, applicationName: app.1, groupingReason: app.2, endpoints: endpoints, portAvailability: portAvailability, observedSince: seen))
             profile?.endFine(.construction)
         }
         profile?.end(.processLoop)
+        if policy != nil {
+            metadata = nextMetadata
+            if let epoch = projectCache?.epoch { projectCache = (epoch, projectsByCWD, markerCache) }
+        }
         profile?.begin(.stringReuse)
         stringStorage.reuseStorage(in: &processes)
         processCounters = nextCounters; firstSeen = nextSeen
         profile?.end(.stringReuse)
         let system = collectSystem(time: start, profile: profile)
         return Snapshot(timestamp: date, system: system, processes: processes, enumeratedCount: Int(count), inaccessibleCount: inaccessible, duration: ProcessInfo.processInfo.systemUptime - start, cadence: cadence, expectedCadence: cadence, availability: .available, notes: ["CPU is percent of one logical core; first samples and reset counters are unknown.", "Project attribution uses explicit containing roots or marker existence within twelve ancestors.", "Application grouping uses outer bundle path or exact executable path; ancestry is not inferred."])
+    }
+    /// Below one full interval, so a backdated first read is never immediately due again.
+    static func refreshStagger(pid: Int32, interval: Double) -> Double {
+        interval * Double(UInt32(bitPattern: pid) % 997) / 997
     }
     public static func application(executable: String, identity: ProcessIdentity, name: String) -> (String, String, String) {
         let components = executable.split(separator: "/")

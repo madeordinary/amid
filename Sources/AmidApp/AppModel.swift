@@ -118,7 +118,8 @@ final class AppModel {
     private var benchmarkTask: Task<Void, Never>?
     private var benchmarkSession: GUIBenchmarkSession?
     private var pipelineProfile: AppPipelineProfile?
-    private let sampler = Sampler()
+    // Counters every sample; path, working directory, project and ports refresh per process. Stop validation keeps full reads.
+    private let sampler = Sampler(mode: .incremental())
     private let alerts = AlertEngine()
     private let actions = ActionController(adapters: bundledFixtureAdapters())
     private var store: HistoryStore?

@@ -51,6 +51,20 @@ int amid_process(int32_t pid,AmidProcess *out) {
  if(proc_pidinfo(pid,PROC_PIDTBSDINFO,0,&check,sizeof(check))!=sizeof(check)||check.pbi_start_tvsec!=b.pbi_start_tvsec||check.pbi_start_tvusec!=b.pbi_start_tvusec||check.pbi_uid!=b.pbi_uid) return 3;
  return 1;
 }
+// Counters only: identity, parent, name, CPU and memory; no path, working directory or sockets.
+int amid_counters(int32_t pid,AmidCounters *out) {
+ memset(out,0,sizeof(*out)); struct proc_bsdinfo b;
+ if(proc_pidinfo(pid,PROC_PIDTBSDINFO,0,&b,sizeof(b))!=sizeof(b)) return errno==EPERM||errno==EACCES?2:3;
+ out->pid=pid; out->parent=b.pbi_ppid; out->uid=b.pbi_uid; out->seconds=b.pbi_start_tvsec; out->micros=b.pbi_start_tvusec;
+ strlcpy(out->name,b.pbi_name[0]?b.pbi_name:b.pbi_comm,sizeof(out->name));
+ struct rusage_info_v2 r;
+ if(proc_pid_rusage(pid,RUSAGE_INFO_V2,(rusage_info_t *)&r)==0) { out->cpu_known=amid_cpu_nanoseconds(r.ri_user_time,r.ri_system_time,&out->cpu); out->memory=r.ri_phys_footprint; out->memory_method=1; }
+ else { struct proc_taskinfo t; if(proc_pidinfo(pid,PROC_PIDTASKINFO,0,&t,sizeof(t))==sizeof(t)) { out->cpu_known=amid_cpu_nanoseconds(t.pti_total_user,t.pti_total_system,&out->cpu); out->memory=t.pti_resident_size; out->memory_method=2; } }
+ // Reject counters collected across PID reuse or exit.
+ struct proc_bsdinfo check;
+ if(proc_pidinfo(pid,PROC_PIDTBSDINFO,0,&check,sizeof(check))!=sizeof(check)||check.pbi_start_tvsec!=b.pbi_start_tvsec||check.pbi_start_tvusec!=b.pbi_start_tvusec||check.pbi_uid!=b.pbi_uid) return 3;
+ return 1;
+}
 int amid_ports(int32_t pid,AmidPort *ports,int capacity,int *status) {
  *status=1; errno=0; int size=proc_pidinfo(pid,PROC_PIDLISTFDS,0,NULL,0);
  if(size<=0 && errno!=0) { *status=errno==EPERM||errno==EACCES?2:3; return 0; }
