@@ -61,3 +61,19 @@ If the suspended tail used negligible CPU, the active-period mean would be about
 It suggests that, with collection near 0.18%, most of the remaining full-app cost is now outside collection: history ingestion, presentation and alerts. That needs a phase profile to confirm. The previous [collection-status run](collection-status-background.md) (0.7980%, mixed five- and ten-second cadence) is not directly comparable.
 
 The owned instance wrote its report, then received one SIGTERM from the watcher that launched it. Raw report, status, logs and seed path are kept privately with the run.
+
+## Three-minute phase profile
+
+On 2026-10-18 the same bundle ran with `--profile-pipeline-output`, a fresh 76-entity seven-day seed and hidden normal presentation. The Mac was on battery (25%), so Amid's policy requested a ten-second cadence. The run **completed**: 18 accepted samples over 187.8 s with 676 processes at completion. It measured 0.5260% own-process CPU of one core and a lifetime peak RSS of 129.97 MiB, including the seed import.
+
+| Phase | CPU per sample | Share of one core at 10 s |
+| --- | --- | --- |
+| Collection (profiled sampler) | 22.77 ms | 0.218% |
+| History ingest (whole process during the interval) | 13.28 ms | 0.127% |
+| Unattributed residual: timers, rendering, heartbeat | 11.7 ms per sample interval | 0.112% |
+| Alert recording and evaluation | 5.31 ms | 0.051% |
+| Grouping, store sync, publication, expiry | 1.92 ms | 0.018% |
+
+Phase CPU is whole-process CPU during each phase's wall interval, so ingestion includes concurrent work. The ingestion thread's own CPU was 7.79 ms per call. Profiling mode times each process step, which inflates collection: the unprofiled side-by-side run measured 9.20 ms per sample. With that figure, per-sample work is about 30 ms. That is about 0.6% of one core at a five-second cadence before the residual, so history ingestion is now the largest single cost after collection.
+
+This is descriptive: a short battery-cadence run on non-reference hardware, with no matched baseline. Memory rose from 130 MiB in this three-minute run to 154 MiB in the 30-minute run. A plausible but unverified cause is the 15-minute in-memory observation ring filling.
