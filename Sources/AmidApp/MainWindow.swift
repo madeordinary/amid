@@ -16,13 +16,16 @@ struct MainWindow: View {
                 List(Destination.allCases, selection: $model.destination) { item in
                     Label(item.title, systemImage: item.symbol).tag(item).padding(.vertical, 5)
                 }.listStyle(.sidebar)
-                TimelineView(.periodic(from: .now, by: 5)) { _ in
-                  VStack(alignment: .leading, spacing: 7) {
-                    Label(model.statusTitle, systemImage: model.paused ? "pause.circle" : "circle.dotted")
-                        .font(.caption.weight(.medium))
+                // Live status reads per-sample state and ticks every five seconds; hidden windows skip both.
+                VStack(alignment: .leading, spacing: 7) {
+                    if model.fullWindowVisible {
+                        TimelineView(.periodic(from: .now, by: 5)) { _ in
+                            Label(model.statusTitle, systemImage: model.paused ? "pause.circle" : "circle.dotted")
+                                .font(.caption.weight(.medium))
+                        }
+                    }
                     Text("Local. Private. On your Mac.").font(.caption2).foregroundStyle(.secondary)
-                  }.padding(20)
-                }
+                }.padding(20)
             }.navigationSplitViewColumnWidth(min: 190, ideal: 210, max: 250)
         } detail: {
             VStack(spacing: 0) {
@@ -63,11 +66,13 @@ struct MainWindow: View {
                   }.frame(width: geometry.size.width, height: geometry.size.height, alignment: .topLeading)
                 }.clipped()
                 Divider()
-                HStack {
-                    Text(model.coverageDescription)
-                    Spacer()
-                    Text(model.cadenceDescription)
-                }.font(.caption).foregroundStyle(.secondary).padding(.horizontal, 22).padding(.vertical, 11)
+                if model.fullWindowVisible {
+                    HStack {
+                        Text(model.coverageDescription)
+                        Spacer()
+                        Text(model.cadenceDescription)
+                    }.font(.caption).foregroundStyle(.secondary).padding(.horizontal, 22).padding(.vertical, 11)
+                }
             }.background(Color(nsColor: .windowBackgroundColor))
         }
         .sheet(isPresented: $model.showOnboarding) { OnboardingScreen(model: model).interactiveDismissDisabled() }

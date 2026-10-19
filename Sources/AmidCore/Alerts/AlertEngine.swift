@@ -10,7 +10,8 @@ public struct AlertSettings: Sendable, Equatable {
     public var diskThresholdBytes: UInt64
     public init(enabledRules: Set<AlertCategory> = Set(AlertCategory.allCases), excludedApplications: Set<String> = [], diskThresholdBytes: UInt64 = 10 * 1024 * 1024 * 1024) { self.enabledRules = enabledRules; self.excludedApplications = excludedApplications; self.diskThresholdBytes = diskThresholdBytes }
 }
-public struct AlertEvent: Codable, Sendable, Identifiable {
+/// Equatable lets @Observable skip reassigning unchanged alerts, so a sync does not invalidate the window every sample.
+public struct AlertEvent: Codable, Sendable, Identifiable, Equatable {
     public var id: UUID
     public var category: AlertCategory
     public var entityID: String

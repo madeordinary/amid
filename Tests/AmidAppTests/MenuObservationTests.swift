@@ -13,6 +13,28 @@ private final class ChangeCount: @unchecked Sendable {
 
 final class MenuObservationTests: XCTestCase {
     @MainActor
+    func testUnchangedStoreStateDoesNotNotifyWindowObserversButChangesDo() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("amid-store-observation-\(UUID())")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = HistoryStore(directory: directory, keyProvider: EphemeralHistoryKeyProvider())
+        let model = AppModel(store: store)
+        model.settings.retention = .week
+        await model.saveSettings()
+        await model.refreshHistoryPresentation()
+        let unchanged = ChangeCount()
+        withObservationTracking { _ = model.error; _ = model.alertEvents; _ = model.storageBytes; _ = model.shortenedByCap } onChange: { unchanged.changed() }
+        await model.refreshHistoryPresentation()
+        XCTAssertEqual(unchanged.count, 0, "A sync with unchanged store state must not invalidate the main window every sample.")
+        let before = model.storageBytes
+        await store.ingest(Snapshot(timestamp: Date(), availability: .available))
+        let changed = ChangeCount()
+        withObservationTracking { _ = model.storageBytes } onChange: { changed.changed() }
+        await model.refreshHistoryPresentation()
+        XCTAssertNotEqual(model.storageBytes, before)
+        XCTAssertEqual(changed.count, 1)
+    }
+
+    @MainActor
     func testDefaultMenuAttentionDoesNotObserveUnchangedSnapshots() {
         let model = AppModel()
         var sample = Snapshot.empty
