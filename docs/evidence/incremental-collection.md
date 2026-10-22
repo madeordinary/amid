@@ -77,3 +77,22 @@ On 2026-10-18 the same bundle ran with `--profile-pipeline-output`, a fresh 76-e
 Phase CPU is whole-process CPU during each phase's wall interval, so ingestion includes concurrent work. The ingestion thread's own CPU was 7.79 ms per call. Profiling mode times each process step, which inflates collection: the unprofiled side-by-side run measured 9.20 ms per sample. With that figure, per-sample work is about 30 ms. That is about 0.6% of one core at a five-second cadence before the residual, so history ingestion is now the largest single cost after collection.
 
 This is descriptive: a short battery-cadence run on non-reference hardware, with no matched baseline. Memory rose from 130 MiB in this three-minute run to 154 MiB in the 30-minute run. A plausible but unverified cause is the 15-minute in-memory observation ring filling.
+
+## Hidden-window re-render fix
+
+Two causes kept the hidden main window busy. First, `AlertEvent` was not `Equatable`, so each sample's store sync reassigned the alert list and `@Observable` notified the window; comparable properties are already skipped when unchanged. Second, the sidebar status timer and the footer read per-sample state while hidden. Commit `05883d9` made `AlertEvent` `Equatable` and shows the timer and footer only while the window is visible.
+
+A regression test fails without the conformance and passes with it. The full suite ran 236 tests with 24 opt-in skips and 0 failures, plus 27 C cases.
+
+Direct ingestion measurement (`IngestCostProfileTests`, opt-in) used 681 live processes against the imported 120,384-record seed. Ordinary calls averaged 0.76 ms. Minute-boundary calls, which enforce retention and persist encrypted state, averaged 24.5 ms. That is 2.8 ms per sample at five-second cadence, so ingestion itself was not the large cost.
+
+Alternating comparison on 2026-10-21: AC power throughout and a five-second cadence. Each run was 180 s and 35 accepted samples, with the same seed, a hidden window, normal presentation and the profiler enabled. Order was old, new, old, new. Old is `build/AmidIncremental.app` (`c9bff74`, `3ba04909…`); new is `build/AmidHiddenUI.app` (`05883d9`, `ed546718…`).
+
+| Build | Own-process CPU of one core | Concurrent CPU during ingestion | Unattributed residual per sample | Lifetime peak RSS |
+| --- | --- | --- | --- | --- |
+| Old | 0.8938%, 0.9394%; mean 0.9166% | 4.44, 5.98 ms | 12.18 ms (one run unavailable) | 147.7, 126.2 MiB |
+| New | 0.7508%, 0.6353%; mean 0.6931% | 0.07, 0.07 ms | 1.61, 2.45 ms | 135.8, 141.6 MiB |
+
+The concurrent work during ingestion disappeared, and the residual fell by about 10 ms per sample. Mean CPU fell by 0.22 percentage points.
+
+Every run includes the profiler's per-process timing. Profiled collection measured 18–24 ms per sample, against 9.2 ms unprofiled, so an unprofiled app is probably near 0.5% of one core on this Mac. That is an estimate: only an unprofiled 30-minute run can show it. Two runs per build are descriptive, not a statistical result. This is not the reference M1 or a matched baseline, and peak RSS varied between runs.
