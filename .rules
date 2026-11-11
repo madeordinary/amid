@@ -9,6 +9,10 @@
 - Swift UInt64.map(Double.init) can select a bit-pattern initializer. Use map { Double($0) } for numeric conversion.
 
 ## Gotchas
+- A GUI app launched from the sandboxed agent shell gets no window server connection (zero windows; start() never runs). Launch owned verification instances with open -n and track the exact executable PID.
+- @Observable skips notifications only when an Equatable property is set to an equal value; a non-Equatable stored type, such as an array of non-Equatable structs, invalidates every observer on each assignment.
+- swift build -c release --build-tests lacks testability. Build release tests with swift test -c release --filter <Test>, then run xctest directly.
+- Profiled sampling (profiledSample or --profile-pipeline-output) adds roughly 10 ms per sample; compare collection cost from unprofiled runs.
 - Process.waitUntilExit() inside an async XCTest can deadlock on the main queue that delivers the exit; poll process.isRunning with Task.sleep instead.
 - Framework Python (Xcode, Homebrew, python.org) runs as …/Python.framework/Versions/<v>/Resources/Python.app/Contents/MacOS/Python, so .app-based exclusions must account for it.
 - libproc rusage and task-info CPU totals are Mach ticks on the tested Apple silicon host. Convert with mach_timebase_info; reference-test with getrusage timeval seconds.
